@@ -10,18 +10,46 @@
 | [![cov ForwardDiff](https://codecov.io/gh/EpiAware/EpiAwareADTools.jl/graph/badge.svg?flag=ad-forwarddiff)](https://app.codecov.io/gh/EpiAware/EpiAwareADTools.jl?flags%5B0%5D=ad-forwarddiff) | [![cov ReverseDiff](https://codecov.io/gh/EpiAware/EpiAwareADTools.jl/graph/badge.svg?flag=ad-reversediff)](https://app.codecov.io/gh/EpiAware/EpiAwareADTools.jl?flags%5B0%5D=ad-reversediff) | [![cov Enzyme forward](https://codecov.io/gh/EpiAware/EpiAwareADTools.jl/graph/badge.svg?flag=ad-enzyme-forward)](https://app.codecov.io/gh/EpiAware/EpiAwareADTools.jl?flags%5B0%5D=ad-enzyme-forward) | [![cov Enzyme reverse](https://codecov.io/gh/EpiAware/EpiAwareADTools.jl/graph/badge.svg?flag=ad-enzyme-reverse)](https://app.codecov.io/gh/EpiAware/EpiAwareADTools.jl?flags%5B0%5D=ad-enzyme-reverse) | [![cov Mooncake reverse](https://codecov.io/gh/EpiAware/EpiAwareADTools.jl/graph/badge.svg?flag=ad-mooncake-reverse)](https://app.codecov.io/gh/EpiAware/EpiAwareADTools.jl?flags%5B0%5D=ad-mooncake-reverse) | [![cov Mooncake forward](https://codecov.io/gh/EpiAware/EpiAwareADTools.jl/graph/badge.svg?flag=ad-mooncake-forward)](https://app.codecov.io/gh/EpiAware/EpiAwareADTools.jl?flags%5B0%5D=ad-mooncake-forward) |
 <!-- badges:end -->
 
-_One-line description of EpiAwareADTools._
+Automatic-differentiation safety machinery for the EpiAware modelling stack.
 
 ## Why EpiAwareADTools?
 
-- _List the package's key features here._
+EpiAwareADTools is the EpiAware org's shared home for AD-safety machinery and AD
+workarounds.
+It is deliberately framed as fixes we host while we try to fix things upstream:
+every entry is documented with the upstream package or issue where it ideally
+belongs, and each is deleted once that upstream fix lands.
+
+Two families make up the current surface.
+
+- The tape-strip pair `primal` and `primal_distribution` reduce an AD-wrapped
+  scalar or distribution to its underlying primal, keeping a non-differentiable
+  hyperparameter (an integration window, a clamp location) off the AD path on
+  every backend.
+- The AD-safe evaluation hooks `cdf_ad_safe`, `logcdf_ad_safe`, `ccdf_ad_safe`,
+  `logccdf_ad_safe`, and `pdf_ad_safe` are extension points a wrapper package
+  overloads for its own component types.
+  Their `Gamma` methods route through an analytic gamma-CDF derivative that
+  stands in for the differentiability `SpecialFunctions.gamma_inc` leaves
+  unimplemented.
+
+Per-backend behaviour for ForwardDiff, ReverseDiff, Enzyme, Mooncake, and
+ChainRulesCore is supplied by package extensions loaded when each backend is
+present.
 
 ## Getting started
 
-See [documentation](https://epiaware.org/EpiAwareADTools.jl/stable/) for a full walkthrough.
+See the [documentation](https://epiaware.org/EpiAwareADTools.jl/stable/) for a
+full walkthrough.
 
 ```julia
-using EpiAwareADTools
+using EpiAwareADTools, Distributions
+
+# AD-safe Gamma CDF, differentiable in shape/scale on every supported backend.
+cdf_ad_safe(Gamma(2.0, 1.0), 3.0)
+
+# Strip an AD wrapper back to its primal value.
+primal(3.0)
 ```
 
 ## Where to learn more
@@ -29,20 +57,27 @@ using EpiAwareADTools
 - [GitHub Discussions](https://github.com/EpiAware/EpiAwareADTools.jl/discussions)
 - [GitHub Repository](https://github.com/EpiAware/EpiAwareADTools.jl)
 
-<!-- standard-sections:start -->
-<!-- MANAGED by EpiAwarePackageTools.scaffold — do not edit between the
-     markers. These standard sections are re-rendered on every update;
-     edit the package-owned sections outside them, or CITATION.cff. -->
-
 ## Contributing
 
-We welcome contributions and new contributors! Please open an issue or pull request on [GitHub](https://github.com/EpiAware/EpiAwareADTools.jl). This package follows [ColPrac](https://github.com/SciML/ColPrac) and the [SciML style](https://github.com/SciML/SciMLStyle).
+We welcome contributions and new contributors! This package follows [ColPrac](https://github.com/SciML/ColPrac) and the [SciML style](https://github.com/SciML/SciMLStyle).
 
-## How to cite
+## Supporting and citing
 
-If you use EpiAwareADTools in your work, please cite it. Citation metadata lives in [`CITATION.cff`](CITATION.cff), which GitHub renders as a "Cite this repository" button on the repository page.
+If you would like to support EpiAwareADTools, please star the repository — such metrics help secure future funding.
+
+If you use EpiAwareADTools in your work, please cite it:
+
+```bibtex
+@software{EpiAwareADTools_jl,
+  author       = {Sam Abbott and EpiAware contributors},
+  title        = {EpiAwareADTools.jl},
+  year         = {2026},
+  url          = {https://github.com/EpiAware/EpiAwareADTools.jl}
+}
+```
+
+A citable DOI will be added with the first tagged release.
 
 ## Code of conduct
 
 Please note that the EpiAwareADTools project is released with a [Contributor Code of Conduct](https://github.com/EpiAware/.github/blob/main/CODE_OF_CONDUCT.md). By contributing, you agree to abide by its terms.
-<!-- standard-sections:end -->

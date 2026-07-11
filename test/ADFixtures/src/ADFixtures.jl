@@ -1,56 +1,65 @@
-# PACKAGE-OWNED — scaffold writes this once and never overwrites it.
-#
-# Minimal AD-fixture registry implementing the EpiAwarePackageTools `ADRegistry`
-# contract: scenarios (each with a ForwardDiff reference), a backend list, and
-# broken/skip bookkeeping. The shared harness (driven from `test/ad/setup.jl`)
-# consumes these. Replace the placeholder scenario with the package's own
-# differentiable log densities and add the backends it supports.
+"""
+    ADFixtures
+
+Shared AD gradient scenarios and backend metadata for EpiAwareADTools. Used by
+`test/ad/runtests.jl`. The scenarios differentiate the AD-safe hooks
+(`cdf_ad_safe`, `logcdf_ad_safe`, `ccdf_ad_safe`, `logccdf_ad_safe`,
+`pdf_ad_safe`) and the internal `_gamma_cdf` directly with respect to a Gamma's
+shape/scale (and, for `_gamma_cdf`, the evaluation point), across the
+ForwardDiff / ReverseDiff / Enzyme / Mooncake backend matrix.
+
+The reference gradient is computed with `ForwardDiff`, which propagates its Dual
+numbers through the package's own gamma-CDF machinery and matches the reverse
+backends (ReverseDiff, Mooncake reverse, Enzyme reverse) to ~1e-6.
+"""
 module ADFixtures
 
-using ADTypes: AutoForwardDiff
+# `__precompile__(false)` skips the precompile cache so the Mooncake / Enzyme
+# load chain does not break the package build on CI. Negligible cost — this
+# module is only loaded by the AD test.
+__precompile__(false)
+
+using EpiAwareADTools
+using EpiAwareADTools: _gamma_cdf
+using Distributions: Distributions, Gamma
+using ADTypes: ADTypes, AutoForwardDiff, AutoReverseDiff, AutoMooncake,
+               AutoMooncakeForward, AutoEnzyme
 using DifferentiationInterface: DifferentiationInterface, Constant
 import DifferentiationInterfaceTest as DIT
-import ForwardDiff
-using EpiAwareADTools
+import ForwardDiff, ReverseDiff, Mooncake, Enzyme
 
 export scenarios, backends, broken_scenario_names,
        backend_broken_scenarios, backend_skip_scenarios
 
-# ForwardDiff reference gradient for a scenario function.
+# `contexts` is a tuple of `Constant`-wrapped data passed positionally to DI's
+# `gradient` and to the differentiated function.
 function _reference(f, θ, contexts)
     return DifferentiationInterface.gradient(
         f, AutoForwardDiff(), θ, contexts...)
 end
 
 """
-    scenarios(; with_reference = false, category = :marginal)
-
-The AD gradient scenarios. Each is a `DIT.Scenario{:gradient, :out}` whose
-`res1` carries a ForwardDiff reference when `with_reference = true`. Replace the
-placeholder with the package's own differentiable log densities; group them by
-`category` if the package distinguishes scenario groups (e.g. `:marginal` vs
-`:latent`).
-"""
-function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
-    out = DIT.Scenario{:gradient, :out}[]
-    # Placeholder: a plain differentiable function so the harness runs out of
-    # the box. Swap for a real log density, e.g.
-    #   f = (θ, obs) -> sum(x -> logpdf(SomeDist(θ...), x), obs)
-    θ = [1.0, 2.0]
-    f = θ -> sum(abs2, θ)
-    push!(out,
-        DIT.Scenario{:gradient, :out}(f, θ; name = "placeholder sum_squares",
-            res1 = with_reference ? _reference(f, θ, ()) : nothing))
-    return out
-end
-
-"""
     backends()
 
-The AD backends to test, as `(; name, backend)` named tuples. Add the package's
-supported backends (ReverseDiff, Mooncake, Enzyme, ...).
+AD backends tested, as `(; name, backend)` named tuples. The `name` is what
+`test/ad/scenarios.jl` selects by tag.
 """
-backends() = [(name = "ForwardDiff", backend = AutoForwardDiff())]
+function backends()
+    return [
+        (name = "ForwardDiff", backend = AutoForwardDiff()),
+        (name = "ReverseDiff (tape)",
+            backend = AutoReverseDiff(compile = false)),
+        (name = "Mooncake reverse",
+            backend = AutoMooncake(config = nothing)),
+        (name = "Mooncake forward", backend = AutoMooncakeForward()),
+        (name = "Enzyme reverse",
+            backend = AutoEnzyme(
+                mode = Enzyme.set_runtime_activity(Enzyme.Reverse))),
+        (name = "Enzyme forward",
+            backend = AutoEnzyme(
+                mode = Enzyme.set_runtime_activity(Enzyme.Forward)))
+    ]
+end
 
 "Scenario names broken on every backend."
 broken_scenario_names() = String[]
@@ -60,5 +69,63 @@ backend_broken_scenarios() = Dict{String, Set{String}}()
 
 "Per-backend scenario names too unstable to run at all."
 backend_skip_scenarios() = Dict{String, Set{String}}()
+
+"""
+    scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
+
+The AD gradient scenarios. Each is a `DIT.Scenario{:gradient, :out}` whose
+`res1` carries a ForwardDiff reference when `with_reference = true`. All
+scenarios sit in one group, so `category` is accepted for the harness contract
+but unused.
+"""
+function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
+    obs = [0.5, 1.2, 2.5, 3.8, 5.1]
+
+    out = DIT.Scenario{:gradient, :out}[]
+
+    function _push!(name, f, θ₀, contexts)
+        res1 = with_reference ? _reference(f, θ₀, contexts) : nothing
+        prep_args = (; x = θ₀, contexts = contexts)
+        push!(out,
+            res1 === nothing ?
+            DIT.Scenario{:gradient, :out}(
+                f, θ₀, contexts...; prep_args = prep_args, name = name) :
+            DIT.Scenario{:gradient, :out}(
+                f, θ₀, contexts...;
+                res1 = res1, prep_args = prep_args, name = name))
+    end
+
+    # Each hook, differentiated through a Gamma's shape/scale. The `Gamma`
+    # methods route through `_gamma_cdf`, so these exercise the reverse-mode
+    # rrule (ReverseDiff, Mooncake reverse, Enzyme reverse), the forward frule
+    # (Mooncake forward), and the ForwardDiff Dual methods end to end.
+    _push!("cdf_ad_safe Gamma",
+        (θ, obs) -> sum(x -> cdf_ad_safe(Gamma(θ[1], θ[2]), x), obs),
+        [2.0, 1.0], (Constant(obs),))
+    _push!("logcdf_ad_safe Gamma",
+        (θ, obs) -> sum(x -> logcdf_ad_safe(Gamma(θ[1], θ[2]), x), obs),
+        [2.0, 1.0], (Constant(obs),))
+    _push!("ccdf_ad_safe Gamma",
+        (θ, obs) -> sum(x -> ccdf_ad_safe(Gamma(θ[1], θ[2]), x), obs),
+        [2.0, 1.0], (Constant(obs),))
+    _push!("logccdf_ad_safe Gamma",
+        (θ, obs) -> sum(x -> logccdf_ad_safe(Gamma(θ[1], θ[2]), x), obs),
+        [2.0, 1.0], (Constant(obs),))
+    # `pdf_ad_safe` on a Gamma differentiates through `pdf(Gamma)`, whose shape
+    # partial calls `SpecialFunctions.gamma`; on Enzyme this exercises the
+    # `gamma` rule in `EpiAwareADToolsEnzymeExt` (Enzyme's own lowering is wrong
+    # by a factor of Γ(x)).
+    _push!("pdf_ad_safe Gamma",
+        (θ, obs) -> sum(x -> pdf_ad_safe(Gamma(θ[1], θ[2]), x), obs),
+        [2.0, 1.0], (Constant(obs),))
+
+    # The internal `_gamma_cdf(k, θ, x)` differentiated in all three arguments,
+    # exercising the dk / dθ / dx partials of the shared rule directly.
+    _push!("_gamma_cdf direct",
+        (θ, _obs) -> _gamma_cdf(θ[1], θ[2], θ[3]),
+        [2.3, 1.7, 1.9], (Constant(obs),))
+
+    return out
+end
 
 end # module ADFixtures

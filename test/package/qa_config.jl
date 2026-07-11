@@ -17,8 +17,12 @@ const QA_CONFIG = (
     aqua = (;),
 
     # ExplicitImports `ignore`: symbols an extension legitimately imports
-    # non-publicly. Tuple of Symbols, e.g. (:_internal_helper,).
-    ei_ignore = (),
+    # non-publicly. When the extension-ambiguity item has already loaded
+    # ForwardDiffExt into the session, the public-imports walk inspects the
+    # extension too, which imports its parent's gamma internals plus
+    # ForwardDiff's Dual plumbing — the standard extension pattern.
+    ei_ignore = (:Dual, :value, :partials, :_gamma_cdf,
+        :_gamma_cdf_value_and_partials),
 
     # Docstring `crossref_ignore`: upstream names docstrings link to via
     # `[`name`](@ref)`, e.g. (:pdf, :cdf, :logpdf).
@@ -41,5 +45,17 @@ const QA_CONFIG = (
     #      prefixes = ("MyPkg", "SomeTrigger"),
     #      expect_phantoms = false,    # true if a third party adds phantoms
     #      broken = false)             # true to quarantine a known ambiguity
-    extensions = ()
+    # Only extensions whose triggers are main-test-env deps are listed; the
+    # ChainRulesCore / Enzyme / Mooncake / ReverseDiff extensions are exercised
+    # by the dedicated AD harness (test/ad), which proves gradient correctness
+    # directly.
+    extensions = (
+    # The partial-Dual `_gamma_cdf` overload set: the unparametrised `Dual`
+    # slots keep the "at least one Dual" space unambiguous (a shared-tag
+    # parametrisation leaves the mixed-tag intersections uncovered and flags
+    # all six partial pairs).
+        (; name = :EpiAwareADToolsForwardDiffExt,
+        triggers = ("ForwardDiff",),
+        prefixes = ("EpiAwareADTools", "ForwardDiff", "Distributions")),
+    )
 )

@@ -4,10 +4,33 @@ authors = ["Sam Abbott", "EpiAware contributors"]
 version = "0.1.0"
 
 [deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
+SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
+
+[weakdeps]
+ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
+ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
+
+[extensions]
+EpiAwareADToolsChainRulesCoreExt = "ChainRulesCore"
+EpiAwareADToolsEnzymeExt = "Enzyme"
+EpiAwareADToolsForwardDiffExt = "ForwardDiff"
+EpiAwareADToolsMooncakeExt = ["ChainRulesCore", "Mooncake"]
+EpiAwareADToolsReverseDiffExt = "ReverseDiff"
 
 [compat]
+ChainRulesCore = "1"
+Distributions = "0.25"
 DocStringExtensions = "0.9"
+Enzyme = "0.13"
+ForwardDiff = "0.10, 1"
+Mooncake = "0.5"
+ReverseDiff = "1"
+SpecialFunctions = "2"
 julia = "1.10, 1.11, 1.12"
 
 [workspace]
