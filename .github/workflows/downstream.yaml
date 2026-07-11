@@ -31,6 +31,7 @@ jobs:
     with:
       # JSON list of downstreams. Each entry needs `repo` (owner/name) and may
       # set `group` (GROUP env for the downstream suite) and `allow_fail` (true
-      # keeps a failure from reding the run). Empty by default; e.g.:
-      #   [{"repo":"EpiAware/SomeDownstream.jl","group":"All"}]
-      downstreams: '[]'
+      # keeps a failure from reding the run). ConvolvedDistributions.jl consumes
+      # the AD-safe surface; add CensoredDistributions.jl here once its
+      # migration onto this package lands.
+      downstreams: '[{"repo":"EpiAware/ConvolvedDistributions.jl"}]'
