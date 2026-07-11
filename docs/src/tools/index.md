@@ -33,6 +33,6 @@ Each tool family has its own page under this section.
 A page states the problem the tool works around, shows the public surface, and
 points at the upstream target so a reader can check whether the workaround is
 still needed.
-The [Public API](@ref public-api) and [Internal API](@ref internals) reference
-pages carry
+The [Public API](@ref public-api) and
+[Internal API](@ref "Internal Documentation") reference pages carry
 the full docstrings.

@@ -34,7 +34,7 @@ gamma density in `_gamma_cdf_value_and_partials` needs it.
 
 This machinery is internal.
 Consumers reach it through the [AD-safe hooks](@ref ad-safe-hooks); the
-[Internal API](@ref internals) page carries the full docstrings.
+[Internal API](@ref "Internal Documentation") page carries the full docstrings.
 
 ## Upstream target
 

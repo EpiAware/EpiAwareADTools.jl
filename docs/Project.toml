@@ -7,10 +7,12 @@
 # pinned by git via `[sources]` (empty for the kit itself, which is the
 # package).
 [deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
 DocumenterVitepress = "4710194d-e776-4893-9690-8d956a29c365"
 EpiAwarePackageTools = "7aaea248-0d11-4a0d-a7dc-86da30abb951"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 EpiAwareADTools = "908e2895-a690-4874-a954-ca006cb9734d"
 
@@ -22,7 +24,9 @@ EpiAwareADTools = {path = ".."}
 EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.jl", rev = "main"}
 
 [compat]
+Distributions = "0.25"
 Documenter = "1"
 DocumenterCitations = "1"
 DocumenterVitepress = "0.3"
+ForwardDiff = "0.10, 1"
 Literate = "2"

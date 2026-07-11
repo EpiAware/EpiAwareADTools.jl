@@ -36,8 +36,13 @@ const TUTORIAL_STUBS = Pair{String, String}[]
 const FORCE_STUB_TUTORIALS = String[]
 
 # Regexes for URLs to skip during the (full-build) linkcheck, e.g. a page
-# published by a separate workflow that is not yet live.
-const LINKCHECK_IGNORE = Regex[]
+# published by a separate workflow that is not yet live. The stable docs site
+# does not exist until the first deploy, and Discussions is off until enabled
+# on the repo, so both self-links are ignored (mirrors ConvolvedDistributions).
+const LINKCHECK_IGNORE = [
+    r"epiaware\.org/EpiAwareADTools\.jl/stable",
+    r"github\.com/EpiAware/EpiAwareADTools\.jl/discussions"
+]
 
 # README -> index.md link rewrites: `from => to` pairs applied line by line,
 # e.g. rewriting an absolute docs URL to an in-site `@ref` so links stay within
