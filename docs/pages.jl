@@ -8,7 +8,9 @@ pages = [
     # Authored quickstart (package-owned source pages, distinct from the
     # README-derived home page).
     "Getting started" => [
-        "Overview" => "getting-started/index.md"
+        "Overview" => "getting-started/index.md",
+        "Installation" => "getting-started/installation.md",
+        "FAQ" => "getting-started/faq.md"
     ],
     # One page per tool family, plus the charter page listing each entry's
     # upstream target and deletion condition.
@@ -22,5 +24,12 @@ pages = [
         "Public API" => "lib/public.md",
         "Internal API" => "lib/internals.md"
     ],
-    "Benchmarks" => "benchmarks.md"
+    "Benchmarks" => "benchmarks.md",
+    "Development" => [
+        "Overview" => "developer/index.md",
+        "Contributing" => "developer/contributing.md",
+        "Adding a workaround" => "developer/adding-a-tool.md",
+        "Release process" => "developer/release-process.md",
+        "Developer FAQ" => "developer/faq.md"
+    ]
 ]

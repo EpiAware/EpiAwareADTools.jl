@@ -54,8 +54,11 @@ primal(3.0)
 
 ## Where to learn more
 
-- [GitHub Discussions](https://github.com/EpiAware/EpiAwareADTools.jl/discussions)
-- [GitHub Repository](https://github.com/EpiAware/EpiAwareADTools.jl)
+- Want to get started running code? Check out the [Getting started documentation](https://epiaware.org/EpiAwareADTools.jl/stable/getting-started/).
+- Want to understand the API? Check out our [API reference](https://epiaware.org/EpiAwareADTools.jl/stable/lib/public).
+- Want to chat with someone about `EpiAwareADTools`? Post on our [GitHub Discussions](https://github.com/EpiAware/EpiAwareADTools.jl/discussions).
+- Want to contribute to `EpiAwareADTools`? Check the [open issues](https://github.com/EpiAware/EpiAwareADTools.jl/issues) and the Contributing section below.
+- Want to see our code? Check out our [GitHub Repository](https://github.com/EpiAware/EpiAwareADTools.jl).
 
 ## Contributing
 
