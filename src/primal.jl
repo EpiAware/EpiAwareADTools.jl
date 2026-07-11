@@ -13,21 +13,30 @@ keep a non-differentiable hyperparameter — for example a quadrature window
 endpoint, which is just *where* to integrate — off the AD path on every
 backend.
 
+A composite distribution returns nested per-component parameter tuples from
+`params`, so the `Tuple` method strips elementwise (recursing into nested
+tuples). This is what lets [`primal_distribution`](@ref), and any caller
+mapping `primal` over `params(d)`, handle a component whose parameter is itself
+a tuple.
+
 This is the sanctioned replacement for the underscore-prefixed `_primal` that
 ConvolvedDistributions.jl and CensoredDistributions.jl each carry internally;
 it stays hosted here until those packages depend on it directly.
 
 # Arguments
-- `x`: the value to strip; a plain real is returned unchanged.
+- `x`: the value to strip; a plain real is returned unchanged, a tuple is
+  stripped elementwise.
 
 # Examples
 ```@example
 using EpiAwareADTools
 
-primal(3.0)
+primal(3.0), primal(((1.0, 2.0), 3.0))
 ```
 """
 primal(x::Real) = x
+
+primal(t::Tuple) = map(primal, t)
 
 @doc """
 Rebuild a distribution with its parameters stripped to their primal values via

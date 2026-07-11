@@ -55,6 +55,23 @@ end
     @test primal(4) === 4
 end
 
+@testitem "primal strips (nested) tuples elementwise" begin
+    using EpiAwareADTools: primal
+
+    # A composite distribution's `params` returns nested per-component
+    # tuples, so the Tuple method must recurse.
+    @test primal(((1.0, 2.0), 3.0)) === ((1.0, 2.0), 3.0)
+    @test primal(()) === ()
+end
+
+@testitem "primal strips a Dual inside a tuple" begin
+    using ForwardDiff: Dual
+    using EpiAwareADTools: primal
+
+    stripped = primal((Dual{:t}(2.0, 1.0), 3.0))
+    @test stripped === (2.0, 3.0)
+end
+
 @testitem "primal_distribution rebuilds from primal params" begin
     using EpiAwareADTools: primal_distribution
     using Distributions: Gamma, Normal, LogNormal, params
