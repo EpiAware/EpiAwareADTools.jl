@@ -1,0 +1,28 @@
+# PACKAGE-OWNED — scaffold writes this once and never overwrites it.
+# The documentation environment: Documenter + DocumenterVitepress (the org docs
+# standard). Add doc-only deps (e.g. plotting, DocumenterCitations) here as the
+# docs grow. The package itself is pinned by path via `[sources]`.
+# The managed `docs/make.jl` calls `using EpiAwarePackageTools` (the shared docs
+# build machinery), so the kit is a docs dep too; until it is registered it is
+# pinned by git via `[sources]` (empty for the kit itself, which is the
+# package).
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
+DocumenterVitepress = "4710194d-e776-4893-9690-8d956a29c365"
+EpiAwarePackageTools = "7aaea248-0d11-4a0d-a7dc-86da30abb951"
+Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
+EpiAwareADTools = "908e2895-a690-4874-a954-ca006cb9734d"
+
+[sources]
+EpiAwareADTools = {path = ".."}
+# Until EpiAwarePackageTools is registered, it is pinned by git so
+# the env resolves out of the box. Switch to a local path to
+# develop the kit alongside this package.
+EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.jl", rev = "main"}
+
+[compat]
+Documenter = "1"
+DocumenterCitations = "1"
+DocumenterVitepress = "0.3"
+Literate = "2"
