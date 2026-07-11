@@ -8,8 +8,7 @@ pages = [
     # Authored quickstart (package-owned source pages, distinct from the
     # README-derived home page).
     "Getting started" => [
-        "Overview" => "getting-started/index.md",
-        "Customising your docs" => "getting-started/customising.md"
+        "Overview" => "getting-started/index.md"
     ],
     # One page per tool family, plus the charter page listing each entry's
     # upstream target and deletion condition.
@@ -22,11 +21,5 @@ pages = [
     "API reference" => [
         "Public API" => "lib/public.md",
         "Internal API" => "lib/internals.md"
-    ],
-    # Maintainer-facing reference: how the kit's managed infrastructure and
-    # template sync keep this repository to the shared standard. Kept out of
-    # Getting started so a new user's first section is not maintainer noise.
-    "Development" => [
-        "Infrastructure and template sync" => "getting-started/infrastructure.md"
     ]
 ]
