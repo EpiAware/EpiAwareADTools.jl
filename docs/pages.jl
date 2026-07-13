@@ -12,6 +12,10 @@ pages = [
         "Installation" => "getting-started/installation.md",
         "FAQ" => "getting-started/faq.md"
     ],
+    # Executable Literate tutorials under `getting-started/tutorials`.
+    "Tutorials" => [
+        "AD backends" => "getting-started/tutorials/ad-backends.md"
+    ],
     # One page per tool family, plus the charter page listing each entry's
     # upstream target and deletion condition.
     "Tools" => [
