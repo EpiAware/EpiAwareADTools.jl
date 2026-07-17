@@ -58,7 +58,7 @@ build_docs(
     EpiAwareADTools;
     repo = "EpiAware/EpiAwareADTools.jl",
     authors = "Sam Abbott, EpiAware contributors",
-    deploy_url = nothing,
+    deploy_url = "https://epiawareadtools.epiaware.org",
     pages = _cfg(:pages, ["Home" => "index.md"]),
     skip_notebooks = "--skip-notebooks" in ARGS ||
                      get(ENV, "SKIP_NOTEBOOKS", "false") == "true",
