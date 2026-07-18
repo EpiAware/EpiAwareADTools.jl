@@ -9,7 +9,12 @@ pages = [
     # README-derived home page).
     "Getting started" => [
         "Overview" => "getting-started/index.md",
-        "Customising your docs" => "getting-started/customising.md"
+        "Installation" => "getting-started/installation.md",
+        "FAQ" => "getting-started/faq.md"
+    ],
+    # Executable Literate tutorials under `getting-started/tutorials`.
+    "Tutorials" => [
+        "AD backends" => "getting-started/tutorials/ad-backends.md"
     ],
     # One page per tool family, plus the charter page listing each entry's
     # upstream target and deletion condition.
@@ -23,10 +28,12 @@ pages = [
         "Public API" => "lib/public.md",
         "Internal API" => "lib/internals.md"
     ],
-    # Maintainer-facing reference: how the kit's managed infrastructure and
-    # template sync keep this repository to the shared standard. Kept out of
-    # Getting started so a new user's first section is not maintainer noise.
+    "Benchmarks" => "benchmarks.md",
     "Development" => [
-        "Infrastructure and template sync" => "getting-started/infrastructure.md"
+        "Overview" => "developer/index.md",
+        "Contributing" => "developer/contributing.md",
+        "Adding a workaround" => "developer/adding-a-tool.md",
+        "Release process" => "developer/release-process.md",
+        "Developer FAQ" => "developer/faq.md"
     ]
 ]
