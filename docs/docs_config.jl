@@ -15,7 +15,7 @@ const LIGHT_TUTORIALS = String[]
 
 # Heavy tutorials (live MCMC fits, multi-backend AD, plotting) are each
 # executed once in a fresh subprocess so native/memory state cannot accumulate.
-const HEAVY_TUTORIALS = String[]
+const HEAVY_TUTORIALS = ["ad-backends.jl"]
 
 # Where the tutorial `.jl` sources and rendered `.md` pages live, relative to
 # `docs/src`.
@@ -68,4 +68,53 @@ const INDEX_STRIP_SECTIONS = String[]
 # history (the timeline published to the repo's `benchmarks` branch). Defaults
 # to the `benchmarks` flag the package was scaffolded with; `false` drops the
 # page and `make.jl` also omits its `pages.jl` nav entry.
-const BENCHMARK_PAGE = false
+const BENCHMARK_PAGE = true
+
+# ---------------------------------------------------------------------------
+# TEMPORARY WORKAROUND — retained after a scaffold_update convergence found the
+# local full docs build (with notebooks) still aborts without it. kit #211
+# fixed the benchmark-embed empty-anchor cause, but DocumenterVitepress's
+# inventory writer still crashes the whole build with
+# `ArgumentError: `name` must have non-zero length` when an anchored header
+# resolves to an empty anchor id. Overwrite that one writer method with a copy
+# whose inventory push is guarded: an empty id logs the page and heading (so
+# the culprit is identifiable in the build log) and skips the entry. Remove
+# once the kit-level guard lands (EpiAwarePackageTools#232); see also
+# ConvolvedDistributions.jl#52, which carries the same override.
+import Documenter
+import DocumenterVitepress
+
+function DocumenterVitepress.render(io::IO, mime::MIME"text/plain",
+        node::Documenter.MarkdownAST.Node, header::Documenter.AnchoredHeader,
+        page, doc; kwargs...)
+    anchor = header.anchor
+    id = replace(DocumenterVitepress.sanitized_anchor_label(anchor),
+        " " => "-")
+    heading = first(node.children)
+    println(io)
+    print(io, "#"^(heading.element.level), " ")
+    heading_iob = IOBuffer()
+    DocumenterVitepress.render(heading_iob, mime, node, heading.children,
+        page, doc; kwargs...)
+    heading_text = rstrip(String(take!(heading_iob)))
+    print(io, heading_text)
+    print(io, " {#$(id)}")
+    if haskey(kwargs, :inventory)
+        if isempty(anchor.id)
+            @warn "Skipping inventory entry: anchored header has an empty "*
+            "anchor id" page=page.source heading=heading_text
+        else
+            item = DocumenterVitepress.InventoryItem(
+                name = anchor.id,
+                domain = "std",
+                role = "label",
+                dispname = DocumenterVitepress._get_inventory_dispname(
+                    anchor.id, Documenter.MDFlatten.mdflatten(anchor.node)),
+                priority = -1,
+                uri = DocumenterVitepress._get_inventory_uri(doc, page, id)
+            )
+            push!(kwargs[:inventory], item)
+        end
+    end
+    println(io)
+end
