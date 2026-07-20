@@ -40,7 +40,7 @@ const FORCE_STUB_TUTORIALS = String[]
 # does not exist until the first deploy, and Discussions is off until enabled
 # on the repo, so both self-links are ignored (mirrors ConvolvedDistributions).
 const LINKCHECK_IGNORE = [
-    r"epiaware\.org/EpiAwareADTools\.jl/stable",
+    r"^https://epiawareadtools\.epiaware\.org/stable",
     r"github\.com/EpiAware/EpiAwareADTools\.jl/discussions"
 ]
 
