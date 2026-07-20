@@ -3,7 +3,7 @@
 EpiAwareADTools.jl follows the Julia ecosystem's standard release practices, driven by the shared EpiAwarePackageTools workflows.
 This page describes what those workflows actually do in this repository.
 
-The package is not yet registered in the Julia General Registry; until the first `/register` run described below merges, users install by URL, as described in [Installation](@ref installation).
+The package is registered in the Julia General Registry; see [Installation](@ref installation).
 
 ## Release philosophy
 

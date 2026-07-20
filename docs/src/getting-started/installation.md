@@ -1,10 +1,10 @@
 # [Installation](@id installation)
 
-`EpiAwareADTools` is not yet registered in the Julia General Registry; install it from GitHub:
+`EpiAwareADTools` is registered in the Julia General Registry:
 
 ```julia
 using Pkg
-Pkg.add(url = "https://github.com/EpiAware/EpiAwareADTools.jl")
+Pkg.add("EpiAwareADTools")
 ```
 
 Load it alongside Distributions.jl:
