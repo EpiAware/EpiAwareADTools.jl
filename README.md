@@ -39,7 +39,7 @@ present.
 
 ## Getting started
 
-See the [documentation](https://epiaware.org/EpiAwareADTools.jl/stable/) for a
+See the [documentation](https://epiawareadtools.epiaware.org/stable/) for a
 full walkthrough.
 
 ```julia
@@ -54,11 +54,18 @@ primal(3.0)
 
 ## Where to learn more
 
-- Want to get started running code? Check out the [Getting started documentation](https://epiaware.org/EpiAwareADTools.jl/stable/getting-started/).
-- Want to understand the API? Check out our [API reference](https://epiaware.org/EpiAwareADTools.jl/stable/lib/public).
-- Want to chat with someone about `EpiAwareADTools`? Post on our [GitHub Discussions](https://github.com/EpiAware/EpiAwareADTools.jl/discussions).
+- Want to get started running code? Check out the [Getting started documentation](https://epiawareadtools.epiaware.org/stable/getting-started/).
+- Want to understand the API? Check out our [API reference](https://epiawareadtools.epiaware.org/stable/lib/public).
 - Want to contribute to `EpiAwareADTools`? Check the [open issues](https://github.com/EpiAware/EpiAwareADTools.jl/issues) and the Contributing section below.
 - Want to see our code? Check out our [GitHub Repository](https://github.com/EpiAware/EpiAwareADTools.jl).
+
+## Getting help
+
+For usage questions, ask on the [Julia Discourse](https://discourse.julialang.org)
+(the SciML or usage categories) or the [epinowcast community forum](https://community.epinowcast.org),
+our home for epidemiological modelling questions.
+Please use [GitHub issues](https://github.com/EpiAware/EpiAwareADTools.jl/issues)
+for bug reports and feature requests only.
 
 ## Contributing
 
