@@ -30,6 +30,7 @@ EpiAwareADTools = {path = ".."}
 EpiAwarePackageTools = {rev = "main", url = "https://github.com/EpiAware/EpiAwarePackageTools.jl"}
 
 [compat]
+AlgebraOfGraphics = "0.13.1"
 CairoMakie = "0.15.13"
 DataFramesMeta = "0.15.6"
 Distributions = "0.25"
