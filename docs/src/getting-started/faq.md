@@ -67,6 +67,8 @@ See the [Contributing guide](@ref contributing) and [Developer FAQ](@ref develop
 
 Still have questions?
 
-- **Package-specific**: Open a [GitHub Discussion](https://github.com/EpiAware/EpiAwareADTools.jl/discussions)
-- **Bug reports**: [GitHub Issues](https://github.com/EpiAware/EpiAwareADTools.jl/issues)
-- **General Julia help**: [Julia Discourse](https://discourse.julialang.org/) or [Julia Slack](https://julialang.org/slack/)
+- **Usage questions**: the [Julia Discourse](https://discourse.julialang.org/)
+  (the SciML or usage categories) or the
+  [epinowcast community forum](https://community.epinowcast.org), our home
+  for epidemiological modelling questions
+- **Bug reports and feature requests**: [GitHub Issues](https://github.com/EpiAware/EpiAwareADTools.jl/issues)

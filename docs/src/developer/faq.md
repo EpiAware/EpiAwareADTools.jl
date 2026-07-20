@@ -15,7 +15,8 @@ using Revise                # Load before your package
 using EpiAwareADTools        # Now changes reload automatically
 ```
 
-Better yet, add Revise to your `startup.jl` file as described on the [EpiAware site](https://epiaware.org/).
+Better yet, add Revise to your `startup.jl` file as described in
+[Using Julia](https://epiaware.org/using-julia) on the EpiAware site.
 
 ### Q: I get "Package not found" errors during development
 
@@ -179,7 +180,8 @@ To host a new workaround, follow [Adding a workaround](@ref adding-a-tool).
 **A:**
 - **Bugs**: File a GitHub issue with a minimal reproducible example
 - **Feature requests**: Open a GitHub issue with rationale and use case
-- **Questions**: Use GitHub Discussions for broader questions
+- **Questions**: Ask on the [Julia Discourse](https://discourse.julialang.org/)
+  or the [epinowcast community forum](https://community.epinowcast.org)
 
 ## Troubleshooting
 
@@ -201,6 +203,7 @@ To host a new workaround, follow [Adding a workaround](@ref adding-a-tool).
 
 For development-specific questions:
 
-- **Code issues**: Open a [GitHub Discussion](https://github.com/EpiAware/EpiAwareADTools.jl/discussions)
+- **Code issues and usage questions**: the
+  [Julia Discourse](https://discourse.julialang.org/) or the
+  [epinowcast community forum](https://community.epinowcast.org)
 - **Bug reports**: [GitHub Issues](https://github.com/EpiAware/EpiAwareADTools.jl/issues)
-- **General Julia development**: [Julia Discourse](https://discourse.julialang.org/)
