@@ -31,10 +31,13 @@ EpiAwarePackageTools = {rev = "main", url = "https://github.com/EpiAware/EpiAwar
 
 [compat]
 DifferentiationInterfaceTest = "0.11.0"
+AlgebraOfGraphics = "0.13.1"
 CairoMakie = "0.15.13"
+DataFramesMeta = "0.15.6"
 Distributions = "0.25"
 Documenter = "1"
 DocumenterCitations = "1"
 DocumenterVitepress = "0.3"
 ForwardDiff = "0.10, 1"
 Literate = "2"
+Statistics = "1.11.1"
