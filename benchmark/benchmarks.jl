@@ -5,11 +5,11 @@
 #
 # The suite benchmarks the package's real hot paths: the five AD-safe
 # evaluation hooks (`cdf_ad_safe`, `logcdf_ad_safe`, `ccdf_ad_safe`,
-# `logccdf_ad_safe`, `pdf_ad_safe`) on a `Gamma` (the analytic gamma-CDF
-# path) and on a `Normal` (the generic fall-through), the internal
-# `_gamma_cdf` kernel, and the per-backend gradients of each hook from the
-# `test/ADFixtures` registry. Groups follow the CensoredDistributions.jl
-# convention: `SUITE[<group>][<variant>][<operation>]`.
+# `logccdf_ad_safe`, `pdf_ad_safe`) on a `Gamma`/`Beta` (the analytic
+# gamma-/beta-CDF paths) and on a `Normal` (the generic fall-through), the
+# internal `_gamma_cdf`/`_beta_cdf` kernels, and the per-backend gradients of
+# each hook from the `test/ADFixtures` registry. Groups follow the
+# CensoredDistributions.jl convention: `SUITE[<group>][<variant>][<operation>]`.
 
 using BenchmarkTools
 using EpiAwareADTools
@@ -19,6 +19,9 @@ const SUITE = BenchmarkGroup()
 
 # Shared evaluation points spanning the bulk of a positive-support Gamma.
 const TEST_XS = collect(range(0.5, 12.0, length = 100))
+
+# Shared evaluation points spanning the (0, 1) support of a Beta.
+const TEST_XS_BETA = collect(range(0.05, 0.95, length = 100))
 
 # Include benchmark definitions.
 include("src/baseline.jl")

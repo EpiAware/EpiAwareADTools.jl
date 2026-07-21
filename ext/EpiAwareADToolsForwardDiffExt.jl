@@ -1,9 +1,10 @@
 module EpiAwareADToolsForwardDiffExt
 
-import EpiAwareADTools: primal, _gamma_cdf
-using EpiAwareADTools: _gamma_cdf_value_and_partials, logcdf_ad_safe,
+import EpiAwareADTools: primal, _gamma_cdf, _beta_cdf
+using EpiAwareADTools: _gamma_cdf_value_and_partials,
+                       _beta_cdf_value_and_partials, logcdf_ad_safe,
                        logccdf_ad_safe
-using Distributions: Distributions, Gamma
+using Distributions: Distributions, Gamma, Beta
 using ForwardDiff: ForwardDiff, Dual, value, partials
 
 # Strip a ForwardDiff `Dual` to its primal value. Recurses through nested
@@ -81,6 +82,44 @@ function _gamma_cdf(k::Real, θ::Real, x::Dual)
     return _dual_impl(k, θ, x)
 end
 
+# Same seven-method coverage for `_beta_cdf(α, β, x) = I_x(α, β)`, deferring
+# to `_beta_cdf_value_and_partials` (in `src/beta_ad.jl`) instead of
+# `_gamma_cdf_value_and_partials` — a separate `_impl` helper since the two
+# share no state, only the dispatch pattern above.
+function _beta_dual_impl(α, β, x)
+    T = _dual_tag(α, β, x)
+    N = _dual_width(α, β, x)
+    αv = _val(α)
+    βv = _val(β)
+    xv = _val(x)
+    Ω, dα, dβ, dx = _beta_cdf_value_and_partials(αv, βv, xv)
+    new_partials = dα * _par(α, Val(N)) + dβ * _par(β, Val(N)) +
+                   dx * _par(x, Val(N))
+    return Dual{T}(Ω, new_partials)
+end
+
+function _beta_cdf(α::Dual, β::Dual, x::Dual)
+    return _beta_dual_impl(α, β, x)
+end
+function _beta_cdf(α::Dual, β::Dual, x::Real)
+    return _beta_dual_impl(α, β, x)
+end
+function _beta_cdf(α::Dual, β::Real, x::Dual)
+    return _beta_dual_impl(α, β, x)
+end
+function _beta_cdf(α::Real, β::Dual, x::Dual)
+    return _beta_dual_impl(α, β, x)
+end
+function _beta_cdf(α::Dual, β::Real, x::Real)
+    return _beta_dual_impl(α, β, x)
+end
+function _beta_cdf(α::Real, β::Dual, x::Real)
+    return _beta_dual_impl(α, β, x)
+end
+function _beta_cdf(α::Real, β::Real, x::Dual)
+    return _beta_dual_impl(α, β, x)
+end
+
 # AD-safe `logcdf`/`logccdf` for a Gamma differentiated through its shape/scale
 # (or evaluation point). The stock `Distributions.logcdf(::Gamma)` routes
 # through `StatsFuns._gammalogcdf`, which has no `Dual` method, so a
@@ -98,5 +137,15 @@ Distributions.logcdf(d::Gamma{<:Dual}, x::Dual) = logcdf_ad_safe(d, x)
 Distributions.logccdf(d::Gamma{<:Dual}, x::Real) = logccdf_ad_safe(d, x)
 Distributions.logccdf(d::Gamma, x::Dual) = logccdf_ad_safe(d, x)
 Distributions.logccdf(d::Gamma{<:Dual}, x::Dual) = logccdf_ad_safe(d, x)
+
+# Same gap, `Beta` side: the stock `Distributions.logcdf(::Beta)` routes
+# through `beta_inc`, which has no `Dual` method either, so a
+# `truncated(Beta; lower)` normaliser breaks under ForwardDiff the same way.
+Distributions.logcdf(d::Beta{<:Dual}, x::Real) = logcdf_ad_safe(d, x)
+Distributions.logcdf(d::Beta, x::Dual) = logcdf_ad_safe(d, x)
+Distributions.logcdf(d::Beta{<:Dual}, x::Dual) = logcdf_ad_safe(d, x)
+Distributions.logccdf(d::Beta{<:Dual}, x::Real) = logccdf_ad_safe(d, x)
+Distributions.logccdf(d::Beta, x::Dual) = logccdf_ad_safe(d, x)
+Distributions.logccdf(d::Beta{<:Dual}, x::Dual) = logccdf_ad_safe(d, x)
 
 end

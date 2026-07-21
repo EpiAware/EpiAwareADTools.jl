@@ -1,6 +1,7 @@
 module EpiAwareADToolsChainRulesCoreExt
 
-using EpiAwareADTools: primal, _gamma_cdf, _gamma_cdf_value_and_partials
+using EpiAwareADTools: primal, _gamma_cdf, _gamma_cdf_value_and_partials,
+                       _beta_cdf, _beta_cdf_value_and_partials
 using ChainRulesCore: ChainRulesCore, NoTangent
 
 # `primal` is a tape-strip returning a non-differentiable primal value (a
@@ -33,6 +34,26 @@ function ChainRulesCore.frule(
         (_, Δk, Δθ, Δx), ::typeof(_gamma_cdf), k::Real, θ::Real, x::Real)
     Ω, dk, dθ, dx = _gamma_cdf_value_and_partials(k, θ, x)
     return Ω, dk * Δk + dθ * Δθ + dx * Δx
+end
+
+# Reverse- and forward-mode rules for `_beta_cdf(α, β, x) = I_x(α, β)`. The
+# analytical partials live in `_beta_cdf_value_and_partials` (in
+# `src/beta_ad.jl`) so the ForwardDiff Dual path and the direct Enzyme rule
+# share the same formulas. The α/β-partials are the terms `beta_inc`'s own
+# `ChainRule` leaves unimplemented; see `_rib_value_and_partials` for the
+# continued-fraction form (Boik & Robinson-Cox 1998).
+function ChainRulesCore.rrule(::typeof(_beta_cdf), α::Real, β::Real, x::Real)
+    Ω, dα, dβ, dx = _beta_cdf_value_and_partials(α, β, x)
+    function _beta_cdf_pullback(ȳ)
+        return (NoTangent(), dα * ȳ, dβ * ȳ, dx * ȳ)
+    end
+    return Ω, _beta_cdf_pullback
+end
+
+function ChainRulesCore.frule(
+        (_, Δα, Δβ, Δx), ::typeof(_beta_cdf), α::Real, β::Real, x::Real)
+    Ω, dα, dβ, dx = _beta_cdf_value_and_partials(α, β, x)
+    return Ω, dα * Δα + dβ * Δβ + dx * Δx
 end
 
 end

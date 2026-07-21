@@ -18,7 +18,8 @@ pages = [
         "Charter and status" => "tools/index.md",
         "Tape-strip: primal" => "tools/tape-strip.md",
         "AD-safe evaluation hooks" => "tools/ad-safe-hooks.md",
-        "Gamma-CDF derivative" => "tools/gamma-cdf.md"
+        "Gamma-CDF derivative" => "tools/gamma-cdf.md",
+        "Beta-CDF derivative" => "tools/beta-cdf.md"
     ],
     "API reference" => [
         "Public API" => "lib/public.md",

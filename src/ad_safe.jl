@@ -41,6 +41,11 @@ function logcdf_ad_safe(dist::Gamma, u::Real)
     return log(_gamma_cdf(shape(dist), scale(dist), u))
 end
 
+function logcdf_ad_safe(dist::Beta, u::Real)
+    u <= 0 && return oftype(float(u), -Inf)
+    return log(_beta_cdf(dist.α, dist.β, u))
+end
+
 @doc """
 AD-safe `cdf(dist, u)` companion to [`logcdf_ad_safe`](@ref).
 
@@ -67,6 +72,10 @@ cdf_ad_safe(dist::UnivariateDistribution, u::Real) = cdf(dist, u)
 
 function cdf_ad_safe(dist::Gamma, u::Real)
     return _gamma_cdf(shape(dist), scale(dist), u)
+end
+
+function cdf_ad_safe(dist::Beta, u::Real)
+    return _beta_cdf(dist.α, dist.β, u)
 end
 
 @doc raw"""
@@ -99,6 +108,11 @@ function logccdf_ad_safe(dist::Gamma, u::Real)
     return log1p(-_gamma_cdf(shape(dist), scale(dist), u))
 end
 
+function logccdf_ad_safe(dist::Beta, u::Real)
+    u <= 0 && return zero(float(u))
+    return log1p(-_beta_cdf(dist.α, dist.β, u))
+end
+
 @doc raw"""
 AD-safe `ccdf(dist, u)`: the survival ``1 - F(u)``.
 
@@ -127,6 +141,10 @@ function ccdf_ad_safe(dist::Gamma, u::Real)
     return 1 - _gamma_cdf(shape(dist), scale(dist), u)
 end
 
+function ccdf_ad_safe(dist::Beta, u::Real)
+    return 1 - _beta_cdf(dist.α, dist.β, u)
+end
+
 @doc """
 AD-safe `pdf(dist, t)` for a component density inside a differentiable
 quadrature.
@@ -151,3 +169,18 @@ pdf_ad_safe(Gamma(2.0, 1.0), 3.0)
 ```
 """
 pdf_ad_safe(dist::UnivariateDistribution, t::Real) = pdf(dist, t)
+
+# The stock `pdf(::Beta)` routes through `StatsFuns.betapdf`, which computes
+# `exp(xlogy(α-1, x) + xlog1py(β-1, -x) - logbeta(α, β))`. Enzyme's own rule
+# for `LogExpFunctions.xlog1py`'s first argument is wrong (confirmed against a
+# ForwardDiff/plain-log reference: returns 1.5 instead of the correct ≈0.807
+# for a `Beta(2,1)` density at `x=0.5`) — `xlogy`'s own first-argument
+# derivative is fine, only `xlog1py`'s is affected. Routes around both by
+# using `log`/`log1p` directly, safe here because the `t <= 0 || t >= 1`
+# guard already excludes the `0 * log(0)` edge case `xlogy`/`xlog1py`
+# themselves exist to handle.
+function pdf_ad_safe(dist::Beta, t::Real)
+    (t <= 0 || t >= 1) && return zero(float(t))
+    α, β = dist.α, dist.β
+    return exp((α - 1) * log(t) + (β - 1) * log1p(-t) - logbeta(α, β))
+end
