@@ -31,7 +31,8 @@ Two families make up the current surface.
   overloads for its own component types.
   Their `Gamma` methods route through an analytic gamma-CDF derivative that
   stands in for the differentiability `SpecialFunctions.gamma_inc` leaves
-  unimplemented.
+  unimplemented, and their `Beta` methods do the same for
+  `SpecialFunctions.beta_inc`'s missing shape-parameter derivatives.
 
 Per-backend behaviour for ForwardDiff, ReverseDiff, Enzyme, Mooncake, and
 ChainRulesCore is supplied by package extensions loaded when each backend is
@@ -51,6 +52,11 @@ cdf_ad_safe(Gamma(2.0, 1.0), 3.0)
 # Strip an AD wrapper back to its primal value.
 primal(3.0)
 ```
+
+## Related packages
+
+- [ConvolvedDistributions.jl](https://convolveddistributions.epiaware.org/stable/), [ComposedDistributions.jl](https://composeddistributions.epiaware.org/dev/), [ModifiedDistributions.jl](https://modifieddistributions.epiaware.org/dev/), [LoweredDistributions.jl](https://lowereddistributions.epiaware.org/dev/) and [CensoredDistributions.jl](https://censoreddistributions.epiaware.org/stable/) import these AD-safe hooks in their own source and overload them for their component types, so their densities differentiate on every supported backend.
+- [DistributionsInference.jl](https://github.com/EpiAware/DistributionsInference.jl) is the emerging fit-protocol layer across those packages, where the AD-safety this package provides is what makes gradient-based fitting work.
 
 ## Where to learn more
 

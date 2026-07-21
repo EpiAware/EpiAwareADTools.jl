@@ -12,23 +12,27 @@ pages = [
         "Installation" => "getting-started/installation.md",
         "FAQ" => "getting-started/faq.md"
     ],
-    # Executable Literate tutorials under `getting-started/tutorials`.
-    "Tutorials" => [
-        "AD backends" => "getting-started/tutorials/ad-backends.md"
-    ],
     # One page per tool family, plus the charter page listing each entry's
     # upstream target and deletion condition.
     "Tools" => [
         "Charter and status" => "tools/index.md",
         "Tape-strip: primal" => "tools/tape-strip.md",
         "AD-safe evaluation hooks" => "tools/ad-safe-hooks.md",
-        "Gamma-CDF derivative" => "tools/gamma-cdf.md"
+        "Gamma-CDF derivative" => "tools/gamma-cdf.md",
+        "Beta-CDF derivative" => "tools/beta-cdf.md"
     ],
     "API reference" => [
         "Public API" => "lib/public.md",
         "Internal API" => "lib/internals.md"
     ],
-    "Benchmarks" => "benchmarks.md",
+    # Performance over time (the AirspeedVelocity history, `benchmarks.md`)
+    # and the AD backend comparison (an executable Literate tutorial under
+    # `getting-started/tutorials`, mostly a benchmark report despite living
+    # there) — grouped together as the two benchmark views (#28).
+    "Benchmarks" => [
+        "Performance over time" => "benchmarks.md",
+        "AD comparison" => "getting-started/tutorials/ad-backends.md"
+    ],
     "Development" => [
         "Overview" => "developer/index.md",
         "Contributing" => "developer/contributing.md",

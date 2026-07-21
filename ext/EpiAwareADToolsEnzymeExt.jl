@@ -1,6 +1,7 @@
 module EpiAwareADToolsEnzymeExt
 
-using EpiAwareADTools: primal, _gamma_cdf, _gamma_cdf_value_and_partials
+using EpiAwareADTools: primal, _gamma_cdf, _gamma_cdf_value_and_partials,
+                       _beta_cdf, _beta_cdf_value_and_partials
 using Enzyme: Enzyme
 using Enzyme.EnzymeRules: EnzymeRules
 using SpecialFunctions: gamma, digamma
@@ -37,5 +38,20 @@ EnzymeRules.@easy_rule(_gamma_cdf(k::Real, θ::Real, x::Real),
 # helper calls `pdf(Gamma(...))`, which uses `gamma` outside the `_gamma_cdf`
 # rule, so this keeps the shape partial correct.
 EnzymeRules.@easy_rule(gamma(x::Real), (Ω * digamma(x),))
+
+# `EnzymeRules.@easy_rule` for `_beta_cdf`, the `_gamma_cdf` rule's counterpart.
+# The analytical (dα, dβ, dx) come from `_beta_cdf_value_and_partials` in
+# `src/beta_ad.jl`, the same source-of-truth helper the ChainRules rrule and
+# the ForwardDiff Dual path use. Routing `_beta_cdf` through this rule avoids
+# Enzyme differentiating `SpecialFunctions.beta_inc` directly, and — since
+# Enzyme never traces into the black-box helper — the `gamma(x)` mis-lowering
+# noted above cannot affect the `pdf(Beta(...))` call `_beta_cdf_value_and_partials`
+# makes for `dx` either.
+EnzymeRules.@easy_rule(_beta_cdf(α::Real, β::Real, x::Real),
+    @setup(_vp=_beta_cdf_value_and_partials(α, β, x),
+        dα=_vp[2],
+        dβ=_vp[3],
+        dx=_vp[4],),
+    (dα, dβ, dx))
 
 end

@@ -7,17 +7,7 @@ Two families make up the surface: the tape-strip pair
 The [Charter and status](@ref charter) page explains why each entry is here and
 when it gets deleted; this page is the quickstart.
 
-## Installation
-
-The package is not yet registered.
-Add it by URL:
-
-```julia
-using Pkg
-Pkg.add(url = "https://github.com/EpiAware/EpiAwareADTools.jl")
-```
-
-Load it:
+See [Installation](@ref installation) to add the package, then load it:
 
 ```julia
 using EpiAwareADTools
