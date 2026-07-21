@@ -1,7 +1,8 @@
 module EpiAwareADToolsEnzymeExt
 
 using EpiAwareADTools: primal, _gamma_cdf, _gamma_cdf_value_and_partials,
-                       _beta_cdf, _beta_cdf_value_and_partials
+                       _beta_cdf, _beta_cdf_value_and_partials,
+                       NonDifferentiable
 using Enzyme: Enzyme
 using Enzyme.EnzymeRules: EnzymeRules
 using SpecialFunctions: gamma, digamma
@@ -14,6 +15,17 @@ using SpecialFunctions: gamma, digamma
 # primal` mark, the ForwardDiff/ReverseDiff primal-stripping methods, and the
 # Mooncake `@zero_derivative` rule.
 EnzymeRules.inactive(::typeof(primal), args...) = nothing
+
+# `NonDifferentiable` (EpiAwareADTools#37): the same `inactive` marking,
+# generalised from the one specific function `primal` to ANY instance of the
+# wrapper type, regardless of the wrapped function `F` — one registration
+# covers every user function wrapped with `nondifferentiable`, including a
+# closure, since dispatch matches on the wrapper's own (unparametrised)
+# type. Enzyme treats the whole call as a constant in every mode (confirmed
+# directly: this also silently zeroes a captured value's contribution if the
+# wrapped closure closes over a live differentiated value rather than
+# receiving it as an argument — see `nondifferentiable`'s docstring).
+EnzymeRules.inactive(::NonDifferentiable, args...) = nothing
 
 # `EnzymeRules.@easy_rule` expands into both the reverse-mode
 # (`augmented_primal` / `reverse`) and forward-mode (`forward`) rules for

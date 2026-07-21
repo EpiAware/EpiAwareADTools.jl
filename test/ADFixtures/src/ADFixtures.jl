@@ -155,6 +155,15 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
         (θ, _obs) -> _beta_cdf(θ[1], θ[2], θ[3]),
         [1.7, 2.3, 0.85], (Constant(obs_beta),))
 
+    # `nondifferentiable` (EpiAwareADTools#37): `θ[1]` flows only through the
+    # wrapped term, `θ[2]` only through the plain one, so the reference
+    # gradient's first component is EXACTLY zero regardless of backend —
+    # this scenario's whole point is confirming every backend agrees on
+    # that, not just that the numbers happen to match.
+    _push!("nondifferentiable wrapped term",
+        (θ, _obs) -> nondifferentiable(x -> x^2)(θ[1]) + θ[2]^2,
+        [2.0, 1.5], (Constant(obs),))
+
     return out
 end
 
