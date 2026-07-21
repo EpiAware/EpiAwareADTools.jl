@@ -52,6 +52,11 @@ cdf_ad_safe(Gamma(2.0, 1.0), 3.0)
 primal(3.0)
 ```
 
+## Related packages
+
+- [ConvolvedDistributions.jl](https://convolveddistributions.epiaware.org/stable/), [ComposedDistributions.jl](https://composeddistributions.epiaware.org/dev/), [ModifiedDistributions.jl](https://modifieddistributions.epiaware.org/dev/), [LoweredDistributions.jl](https://lowereddistributions.epiaware.org/dev/) and [CensoredDistributions.jl](https://censoreddistributions.epiaware.org/stable/) import these AD-safe hooks in their own source and overload them for their component types, so their densities differentiate on every supported backend.
+- [DistributionsInference.jl](https://github.com/EpiAware/DistributionsInference.jl) is the emerging fit-protocol layer across those packages, where the AD-safety this package provides is what makes gradient-based fitting work.
+
 ## Where to learn more
 
 - Want to get started running code? Check out the [Getting started documentation](https://epiawareadtools.epiaware.org/stable/getting-started/).
