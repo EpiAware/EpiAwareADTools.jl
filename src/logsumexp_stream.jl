@@ -51,6 +51,13 @@ only once the running total has been unchanged within `atol` for
 term, which would silently truncate a heavy tail that dips low for a term
 or two and then recovers.
 
+This is still a fixed-lookahead rule, not a proof of convergence: a
+sequence with a genuine plateau of `min_stable_terms` or more consecutive
+negligible terms, followed by a later resurgence, is indistinguishable
+from true convergence and will stop early regardless of what comes after.
+A caller expecting a distribution with a long flat middle should raise
+`min_stable_terms` accordingly.
+
 Returns a `NamedTuple` `(value, terms_used, converged)`: `value` is the
 accumulated log-sum (differentiable in whatever `log_term` closes over),
 `terms_used` is how many terms were consumed, and `converged` is `true`
