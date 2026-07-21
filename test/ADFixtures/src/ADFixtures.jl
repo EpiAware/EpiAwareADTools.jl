@@ -125,6 +125,16 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
         (θ, _obs) -> _gamma_cdf(θ[1], θ[2], θ[3]),
         [2.3, 1.7, 1.9], (Constant(obs),))
 
+    # `logsumexp_stream` (EpiAwareADTools#39): a parameterised geometric
+    # series Σ_{k≥0} exp(-k·θ), differentiated in θ. Plain generic control
+    # flow with no non-differentiable primitive, so this needs no bespoke
+    # per-backend rule — the scenario exists to confirm every backend
+    # differentiates straight through the accumulator's loop.
+    _push!("logsumexp_stream geometric",
+        (θ, _obs) -> EpiAwareADTools.logsumexp_stream(
+            k -> -k * θ[1]).value,
+        [1.0], (Constant(obs),))
+
     return out
 end
 
