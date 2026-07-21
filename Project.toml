@@ -1,7 +1,7 @@
 name = "EpiAwareADTools"
 uuid = "908e2895-a690-4874-a954-ca006cb9734d"
 authors = ["Sam Abbott", "EpiAware contributors"]
-version = "0.1.1"
+version = "0.1.2"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
