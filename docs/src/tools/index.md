@@ -20,13 +20,6 @@ rot.
 | [`cdf_ad_safe`](@ref), [`logcdf_ad_safe`](@ref), [`ccdf_ad_safe`](@ref), [`logccdf_ad_safe`](@ref), [`pdf_ad_safe`](@ref) | Extension-point wrappers whose `Gamma` methods stay differentiable in shape/scale | `Distributions.jl` Gamma CDF/log-CDF differentiable in its parameters | `cdf(::Gamma)` and `logcdf(::Gamma)` differentiable upstream on the supported backends |
 | Gamma-CDF derivative (`_gamma_cdf` and its rules) | Analytic shape/scale/point partials for `P(k, x/θ)` | Differentiable `gamma_inc` in `SpecialFunctions.jl` ([issue #531](https://github.com/JuliaMath/SpecialFunctions.jl/issues/531)) | `SpecialFunctions.gamma_inc` carries a complete `ChainRule` (the shape partial included) |
 
-## What does not live here
-
-The Gauss-Legendre quadrature layer that ConvolvedDistributions.jl uses is out
-of scope for now.
-It is a candidate future resident if a second package needs it, but it is not an
-AD workaround, so it stays where it is used until then.
-
 ## How to read each page
 
 Each tool family has its own page under this section.
