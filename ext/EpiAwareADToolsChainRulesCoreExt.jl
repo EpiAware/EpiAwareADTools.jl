@@ -1,7 +1,8 @@
 module EpiAwareADToolsChainRulesCoreExt
 
 using EpiAwareADTools: primal, _gamma_cdf, _gamma_cdf_value_and_partials,
-                       _beta_cdf, _beta_cdf_value_and_partials
+                       _beta_cdf, _beta_cdf_value_and_partials,
+                       NonDifferentiable
 using ChainRulesCore: ChainRulesCore, NoTangent
 
 # `primal` is a tape-strip returning a non-differentiable primal value (a
@@ -9,6 +10,15 @@ using ChainRulesCore: ChainRulesCore, NoTangent
 # carrying no gradient). Marking it `@non_differentiable` keeps reverse-mode AD
 # — and Mooncake, which lifts ChainRules rules — from tracing through it.
 ChainRulesCore.@non_differentiable primal(::Any)
+
+# `NonDifferentiable` (EpiAwareADTools#37) generalises the same
+# non-differentiable-primitive discipline `primal` gets above to an
+# arbitrary user function, registered ONCE here rather than once per user
+# function. The call's own body already strips both its arguments and its
+# result via `primal`, so this marking is defence-in-depth for a
+# ChainRules-consuming context beyond the four backends this package tests
+# directly (mirrors `primal`'s own registration above).
+ChainRulesCore.@non_differentiable (nd::NonDifferentiable)(args...)
 
 # Reverse- and forward-mode rules for `_gamma_cdf(k, θ, x) = P(k, x/θ)`. The
 # analytical partials live in `_gamma_cdf_value_and_partials` (in
