@@ -14,7 +14,9 @@ hooks [`cdf_ad_safe`](@ref), [`logcdf_ad_safe`](@ref), [`ccdf_ad_safe`](@ref),
 [`logccdf_ad_safe`](@ref), and [`pdf_ad_safe`](@ref) are extension points a
 wrapper package overloads for its own component types; their `Gamma` methods
 route through an analytic gamma-CDF derivative that stands in for the
-differentiability `SpecialFunctions.gamma_inc` leaves unimplemented.
+differentiability `SpecialFunctions.gamma_inc` leaves unimplemented, and their
+`Beta` methods do the same for `SpecialFunctions.beta_inc`'s missing
+shape-parameter derivatives.
 
 Per-backend behaviour (ForwardDiff, ReverseDiff, Enzyme, Mooncake,
 ChainRulesCore) is supplied by package extensions loaded when each backend is
@@ -37,10 +39,10 @@ module EpiAwareADTools
 # introspection the tape-strip and gamma methods need. All module-scope
 # using/import live in this file (kit #105); the extensions import the
 # package's own internals from here.
-using Distributions: Distributions, UnivariateDistribution, Gamma, params,
-                     shape, scale, pdf, cdf, logcdf, ccdf, logccdf
+using Distributions: Distributions, UnivariateDistribution, Gamma, Beta,
+                     params, shape, scale, pdf, cdf, logcdf, ccdf, logccdf
 
-using SpecialFunctions: gamma_inc, loggamma, digamma
+using SpecialFunctions: gamma_inc, loggamma, digamma, beta_inc, logbeta
 
 # DocStringExtensions symbols for the @template conventions registered by
 # src/docstrings.jl.
@@ -62,6 +64,10 @@ include("primal.jl")
 # partial, the AD-safe `_gamma_cdf`, and the shared value-and-partials helper
 # the per-backend extensions consume.
 include("gamma_ad.jl")
+# Beta-CDF analytic derivative machinery (internal): the continued-fraction
+# shape partials, the AD-safe `_beta_cdf`, and the shared value-and-partials
+# helper the per-backend extensions consume.
+include("beta_ad.jl")
 # The AD-safe evaluation hooks wrapping cdf/logcdf/ccdf/logccdf/pdf.
 include("ad_safe.jl")
 

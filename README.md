@@ -31,7 +31,8 @@ Two families make up the current surface.
   overloads for its own component types.
   Their `Gamma` methods route through an analytic gamma-CDF derivative that
   stands in for the differentiability `SpecialFunctions.gamma_inc` leaves
-  unimplemented.
+  unimplemented, and their `Beta` methods do the same for
+  `SpecialFunctions.beta_inc`'s missing shape-parameter derivatives.
 
 Per-backend behaviour for ForwardDiff, ReverseDiff, Enzyme, Mooncake, and
 ChainRulesCore is supplied by package extensions loaded when each backend is
