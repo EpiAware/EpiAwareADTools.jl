@@ -54,6 +54,39 @@ import EpiAwareADTools: pdf_ad_safe
 pdf_ad_safe(d::MyModifiedDist, t::Real) = my_ad_safe_density(d, t)
 ```
 
+## [Survival distributions](@id survival-hooks)
+
+Loading `SurvivalDistributions.jl` alongside this package adds hook methods for
+`SurvivalDistributions.GeneralizedGamma`, supplied by the
+`EpiAwareADToolsSurvivalDistributionsExt` extension.
+
+A `GeneralizedGamma(σ, ν, γ)` carries an inner `Gamma(ν/γ, σ^γ)` and defines its
+survival as `logccdf(d, t) = logccdf(d.G, t^γ)`, so its CDF family inherits
+exactly the `Gamma` problem above: any kernel differentiating through a
+GeneralizedGamma leaf reaches `StatsFuns._gammalogccdf` and errors on every
+backend.
+The extension routes the inner Gamma through [`cdf_ad_safe`](@ref) at the
+transformed point `t^γ`.
+The transform and the inner shape/scale are elementary, so the gradient flows
+through all three parameters.
+
+```@example ad-safe-hooks
+using SurvivalDistributions
+
+dg = GeneralizedGamma(1.5, 2.0, 1.3)
+cdf_ad_safe(dg, 3.0), logccdf_ad_safe(dg, 3.0)
+```
+
+The extension also claims `Distributions.logcdf(::GeneralizedGamma, ::Real)`.
+`SurvivalDistributions` defines `logccdf` but no `logcdf`, so a bare `logcdf`
+call otherwise falls through to the generic method and evaluates the inner
+Gamma's non-differentiable log-CDF.
+`cdf`, `ccdf`, and `logccdf` are owned by `SurvivalDistributions` and are left
+alone; redefining them would be method-overwriting piracy.
+
+`SurvivalDistributions.LogLogistic` needs no methods: its evaluators are built
+from elementary operations and differentiate through the generic fallback.
+
 ## Upstream target
 
 The family exists because the Gamma and Beta CDFs are not differentiable in
