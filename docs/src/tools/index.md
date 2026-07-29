@@ -20,6 +20,7 @@ rot.
 | [`cdf_ad_safe`](@ref), [`logcdf_ad_safe`](@ref), [`ccdf_ad_safe`](@ref), [`logccdf_ad_safe`](@ref), [`pdf_ad_safe`](@ref) | Extension-point wrappers whose `Gamma` and `Beta` methods stay differentiable in shape/scale | `Distributions.jl` Gamma/Beta CDF/log-CDF differentiable in their parameters | `cdf(::Gamma)`/`cdf(::Beta)` and `logcdf(::Gamma)`/`logcdf(::Beta)` differentiable upstream on the supported backends |
 | Gamma-CDF derivative (`_gamma_cdf` and its rules) | Analytic shape/scale/point partials for `P(k, x/θ)` | Differentiable `gamma_inc` in `SpecialFunctions.jl` ([issue #531](https://github.com/JuliaMath/SpecialFunctions.jl/issues/531)) | `SpecialFunctions.gamma_inc` carries a complete `ChainRule` (the shape partial included) |
 | [Beta-CDF derivative](@ref beta-cdf) (`_beta_cdf` and its rules) | Analytic shape/point partials for `I_x(α, β)`, the `beta_inc` analogue of the Gamma-CDF derivative | Differentiable `beta_inc` in `SpecialFunctions.jl` (no tracking issue yet) | `SpecialFunctions.beta_inc` carries a complete `ChainRule` (the shape partials included) |
+| [GeneralizedGamma hook methods](@ref survival-hooks) (`SurvivalDistributions` extension) | Route a `SurvivalDistributions.GeneralizedGamma` through the AD-safe Gamma path, and claim the `logcdf` method the upstream package leaves undefined | `SurvivalDistributions.jl`, once the Gamma CDF is differentiable in its parameters | The hook family is deleted, i.e. `cdf(::Gamma)`/`logcdf(::Gamma)` differentiable upstream |
 
 ## How to read each page
 

@@ -54,6 +54,50 @@ import EpiAwareADTools: pdf_ad_safe
 pdf_ad_safe(d::MyModifiedDist, t::Real) = my_ad_safe_density(d, t)
 ```
 
+## [Survival distributions](@id survival-hooks)
+
+Loading `SurvivalDistributions.jl` alongside this package adds hook methods for
+`SurvivalDistributions.GeneralizedGamma`, supplied by the
+`EpiAwareADToolsSurvivalDistributionsExt` extension.
+
+A `GeneralizedGamma(σ, ν, γ)` carries an inner `Gamma(ν/γ, σ^γ)` and defines its
+survival as `logccdf(d, t) = logccdf(d.G, t^γ)`, so its CDF family inherits
+exactly the `Gamma` problem above: any kernel differentiating through a
+GeneralizedGamma leaf reaches `StatsFuns._gammalogccdf` and errors on every
+backend.
+The extension routes the inner Gamma through [`cdf_ad_safe`](@ref) at the
+transformed point `t^γ`.
+The transform and the inner shape/scale are elementary, so the gradient flows
+through all three parameters.
+
+```@example ad-safe-hooks
+using SurvivalDistributions
+
+dg = GeneralizedGamma(1.5, 2.0, 1.3)
+cdf_ad_safe(dg, 3.0), logccdf_ad_safe(dg, 3.0)
+```
+
+The extension also claims `Distributions.logcdf(::GeneralizedGamma, ::Real)`.
+`SurvivalDistributions` defines `logccdf` but no `logcdf`, so a bare `logcdf`
+call otherwise falls through to the generic
+`logcdf(d, x) = log(cdf(d, x))`, and from there to
+`SurvivalDistributions`' own `cdf(GG, t) = 1 - exp(logccdf(d.G, t^γ))` — so it
+lands back on the non-differentiable `_gammalogccdf` too.
+`cdf`, `ccdf`, and `logccdf` are owned by `SurvivalDistributions` and are left
+alone; redefining them would be method-overwriting piracy.
+
+`SurvivalDistributions.LogLogistic` needs no methods: its evaluators are built
+from elementary operations and differentiate through the generic fallback.
+
+!!! note "Far right tail"
+    Like the `Gamma` and `Beta` methods, `logccdf_ad_safe` reconstructs the
+    survival as `log1p(-F)`, which loses precision once `F` rounds to `1` and
+    underflows to `-Inf` further out than the stock evaluator does.
+    For `GeneralizedGamma(1.5, 2.0, 1.3)` the two agree to ~1e-9 up to `x = 20`
+    and diverge beyond it.
+    Right-censored observations far into the tail should be scored against the
+    stock `logccdf` where the gradient is not needed.
+
 ## Upstream target
 
 The family exists because the Gamma and Beta CDFs are not differentiable in

@@ -50,12 +50,21 @@ const QA_CONFIG = (
     # by the dedicated AD harness (test/ad), which proves gradient correctness
     # directly.
     extensions = (
-    # The partial-Dual `_gamma_cdf` overload set: the unparametrised `Dual`
-    # slots keep the "at least one Dual" space unambiguous (a shared-tag
-    # parametrisation leaves the mixed-tag intersections uncovered and flags
-    # all six partial pairs).
+        # The partial-Dual `_gamma_cdf` overload set: the unparametrised `Dual`
+        # slots keep the "at least one Dual" space unambiguous (a shared-tag
+        # parametrisation leaves the mixed-tag intersections uncovered and flags
+        # all six partial pairs).
         (; name = :EpiAwareADToolsForwardDiffExt,
-        triggers = ("ForwardDiff",),
-        prefixes = ("EpiAwareADTools", "ForwardDiff", "Distributions")),
+            triggers = ("ForwardDiff",),
+            prefixes = ("EpiAwareADTools", "ForwardDiff", "Distributions")),
+        # The GeneralizedGamma hook methods, plus the `Distributions.logcdf`
+        # method `SurvivalDistributions` leaves unclaimed. The only extension
+        # here adding a method to a third-party generic on a third-party type,
+        # so the ambiguity check earns its keep; `SurvivalDistributions` is a
+        # main-test-env dep, so it meets the criterion above.
+        (; name = :EpiAwareADToolsSurvivalDistributionsExt,
+            triggers = ("SurvivalDistributions",),
+            prefixes = (
+                "EpiAwareADTools", "SurvivalDistributions", "Distributions"))
     )
 )
