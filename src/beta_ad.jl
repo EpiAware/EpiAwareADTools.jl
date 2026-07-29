@@ -153,7 +153,7 @@ path uses). AD coverage is supplied by per-backend extensions:
 - `EpiAwareADToolsEnzymeExt` supplies the direct Enzyme rule.
 
 The `α`/`β`-partials that `beta_inc`'s `ChainRule` leaves unimplemented are
-supplied by [`_rib_value_and_partials`](@ref), following the continued
+supplied by `_rib_value_and_partials`, following the continued
 fraction Boik & Robinson-Cox (1998) derive for the regularised incomplete
 beta's shape-parameter derivatives. This mirrors [`_gamma_cdf`](@ref)'s
 role for `gamma_inc` (SpecialFunctions.jl issue #531) — there is no
