@@ -55,6 +55,53 @@ end
     @test logcdf(d, 0.0) == -Inf
 end
 
+@testitem "GeneralizedGamma logcdf is still unclaimed upstream" begin
+    using Distributions: Distributions, logcdf
+    import SurvivalDistributions as SD
+
+    # The extension's `logcdf` method is additive only while
+    # `SurvivalDistributions` defines none of its own. If upstream adds one —
+    # non-breaking for them, `SurvivalDistributions = "0.1"` here — ours
+    # becomes a method-overwriting redefinition that breaks precompilation.
+    # Fail loudly here instead, so the signal is a red test rather than a
+    # package that will not load.
+    owners = Set(
+        parentmodule(m) for m in methods(logcdf, Tuple{SD.GeneralizedGamma, Real})
+    )
+    @test !(SD in owners)
+end
+
+@testitem "GeneralizedGamma pdf needs no bespoke method" begin
+    using EpiAwareADTools
+    using Distributions: pdf
+    import SurvivalDistributions as SD
+
+    # `logpdf(GG)` is elementary bar `loggamma`, so `pdf_ad_safe` stays a
+    # passthrough. Pinned because it is the half of a survival likelihood the
+    # CDF hooks do not supply; the AD items sweep its gradient.
+    d = SD.GeneralizedGamma(1.5, 2.0, 1.3)
+    for x in (0.4, 1.0, 3.2, 8.0)
+        @test pdf_ad_safe(d, x) == pdf(d, x)
+    end
+end
+
+@testitem "GeneralizedGamma logccdf tail agreement and its limit" begin
+    using EpiAwareADTools
+    using Distributions: logccdf
+    import SurvivalDistributions as SD
+
+    # `logccdf_ad_safe` reconstructs the survival as `log1p(-F)`, so it tracks
+    # the stock evaluator only while `F` stays away from 1. Pin where that
+    # holds, and pin the underflow itself so a future log-space survival
+    # implementation shows up here as a deliberate change rather than silently.
+    d = SD.GeneralizedGamma(1.5, 2.0, 1.3)
+    for x in (0.4, 1.0, 3.2, 8.0, 15.0, 20.0)
+        @test logccdf_ad_safe(d, x)≈logccdf(d, x) rtol=1e-6
+    end
+    @test logccdf_ad_safe(d, 30.0) == -Inf
+    @test isfinite(logccdf(d, 30.0))
+end
+
 @testitem "LogLogistic needs no hook method" begin
     using EpiAwareADTools
     using Distributions: cdf, ccdf, logcdf, logccdf, pdf

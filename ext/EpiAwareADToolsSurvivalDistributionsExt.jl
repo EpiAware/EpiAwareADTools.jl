@@ -63,12 +63,16 @@ end
 # `*_ad_safe` hook methods above. `SurvivalDistributions` defines
 # `logccdf(GG, t) = logccdf(d.G, t^gamma)` but no `logcdf`, so a direct
 # `logcdf(GeneralizedGamma(θ...), t)` falls through to the generic
-# `Distributions.logcdf`, which evaluates the inner Gamma's `logcdf` →
-# `StatsFuns._gammalogcdf`. That has no `ForwardDiff.Dual` /
-# `ReverseDiff.TrackedReal` / Mooncake method, so under any AD backend it
-# strips the `Dual` and throws. Routing `logcdf` through the AD-safe helper
-# makes a bare `logcdf` differentiate everywhere, closing the gap a user hits
-# scoring a GeneralizedGamma leaf directly. `cdf`/`ccdf`/`logccdf` are owned by
+# `Distributions.logcdf(::UnivariateDistribution, ::Real) = log(cdf(d, x))`.
+# That reaches `SurvivalDistributions`' own
+# `cdf(GG, t) = 1 - exp(logccdf(d.G, t^gamma))` and so lands on
+# `StatsFuns._gammalogccdf` — the survival branch, not `_gammalogcdf`, because
+# the whole GeneralizedGamma CDF family is defined from the survival. That has
+# no `ForwardDiff.Dual` / `ReverseDiff.TrackedReal` / Mooncake method, so under
+# any AD backend it strips the `Dual` and throws. Routing `logcdf` through the
+# AD-safe helper makes a bare `logcdf` differentiate everywhere, closing the
+# gap a user hits scoring a GeneralizedGamma leaf directly.
+# `cdf`/`ccdf`/`logccdf` are owned by
 # `SurvivalDistributions` (redefining them here is method-overwriting piracy
 # and breaks precompilation), so they are left to the `cdf_ad_safe` /
 # `ccdf_ad_safe` / `logccdf_ad_safe` hooks. Only `logcdf` is unclaimed and so
