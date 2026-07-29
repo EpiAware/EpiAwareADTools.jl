@@ -7,7 +7,9 @@ Shared AD gradient scenarios and backend metadata for EpiAwareADTools. Used by
 `pdf_ad_safe`) and the internal `_gamma_cdf`/`_beta_cdf` directly with respect
 to a Gamma's shape/scale or a Beta's two shape parameters (and, for the
 internal functions, the evaluation point), across the ForwardDiff /
-ReverseDiff / Enzyme / Mooncake backend matrix.
+ReverseDiff / Enzyme / Mooncake backend matrix. The hook methods the
+`SurvivalDistributions` extension adds are covered the same way, differentiated
+through a `GeneralizedGamma`'s three parameters.
 
 The reference gradient is computed with `ForwardDiff`, which propagates its Dual
 numbers through the package's own gamma-CDF machinery and matches the reverse
@@ -22,7 +24,10 @@ __precompile__(false)
 
 using EpiAwareADTools
 using EpiAwareADTools: _gamma_cdf, _beta_cdf
-using Distributions: Distributions, Gamma, Beta
+using Distributions: Distributions, Gamma, Beta, logcdf
+# Loads `EpiAwareADToolsSurvivalDistributionsExt`, whose GeneralizedGamma hook
+# methods the survival scenarios below differentiate.
+import SurvivalDistributions as SD
 using ADTypes: ADTypes, AutoForwardDiff, AutoReverseDiff, AutoMooncake,
                AutoMooncakeForward, AutoEnzyme
 using DifferentiationInterface: DifferentiationInterface, Constant
@@ -163,6 +168,42 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
     _push!("nondifferentiable wrapped term",
         (θ, _obs) -> nondifferentiable(x -> x^2)(θ[1]) + θ[2]^2,
         [2.0, 1.5], (Constant(obs),))
+    # Each hook on a `SurvivalDistributions.GeneralizedGamma`, differentiated
+    # in all three of its parameters, which the constructor takes in the order
+    # `(sigma, nu, gamma)`. The methods live in
+    # `EpiAwareADToolsSurvivalDistributionsExt` and route the inner
+    # `Gamma(nu/gamma, sigma^gamma)` through `cdf_ad_safe` at the transformed
+    # point `x^gamma`, so these check the gradient survives both the parameter
+    # transform and the shared `_gamma_cdf` rule. Without the extension the
+    # stock path reaches `StatsFuns._gammalogccdf` and errors on every backend.
+    θ_gg = [1.5, 2.0, 1.3]
+
+    _push!("cdf_ad_safe GeneralizedGamma",
+        (θ, obs) -> sum(
+            x -> cdf_ad_safe(SD.GeneralizedGamma(θ[1], θ[2], θ[3]), x), obs),
+        θ_gg, (Constant(obs),))
+    _push!("logcdf_ad_safe GeneralizedGamma",
+        (θ, obs) -> sum(
+            x -> logcdf_ad_safe(SD.GeneralizedGamma(θ[1], θ[2], θ[3]), x),
+            obs),
+        θ_gg, (Constant(obs),))
+    _push!("ccdf_ad_safe GeneralizedGamma",
+        (θ, obs) -> sum(
+            x -> ccdf_ad_safe(SD.GeneralizedGamma(θ[1], θ[2], θ[3]), x), obs),
+        θ_gg, (Constant(obs),))
+    _push!("logccdf_ad_safe GeneralizedGamma",
+        (θ, obs) -> sum(
+            x -> logccdf_ad_safe(SD.GeneralizedGamma(θ[1], θ[2], θ[3]), x),
+            obs),
+        θ_gg, (Constant(obs),))
+    # The public `logcdf` method the extension adds: `SurvivalDistributions`
+    # leaves `logcdf` unclaimed, so this pins that a bare `logcdf` call on a
+    # GeneralizedGamma differentiates rather than falling through to
+    # `StatsFuns._gammalogcdf`.
+    _push!("logcdf GeneralizedGamma",
+        (θ, obs) -> sum(
+            x -> logcdf(SD.GeneralizedGamma(θ[1], θ[2], θ[3]), x), obs),
+        θ_gg, (Constant(obs),))
 
     return out
 end
