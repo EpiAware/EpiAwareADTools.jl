@@ -168,6 +168,13 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
     _push!("nondifferentiable wrapped term",
         (θ, _obs) -> nondifferentiable(x -> x^2)(θ[1]) + θ[2]^2,
         [2.0, 1.5], (Constant(obs),))
+    # The same, with the whole live parameter VECTOR as the argument, so
+    # `primal(::AbstractArray)` is swept on every backend. Both components
+    # reach the wrapped term and neither derivative survives it, leaving the
+    # plain term as the only contribution: the gradient is `[0, 2θ[2]]`.
+    _push!("nondifferentiable array argument",
+        (θ, _obs) -> nondifferentiable(sum)(θ) + θ[2]^2,
+        [2.0, 1.5], (Constant(obs),))
     # Each hook on a `SurvivalDistributions.GeneralizedGamma`, differentiated
     # in all three of its parameters, which the constructor takes in the order
     # `(sigma, nu, gamma)`. The methods live in

@@ -47,10 +47,36 @@ end
     @test grid.lo == 0.0 && grid.hi == 1.0
 end
 
+@testitem "nondifferentiable: an array-bearing struct argument (issue #37)" begin
+    using EpiAwareADTools: nondifferentiable
+    import EpiAwareADTools: primal
+
+    # Issue #37's own motivating example, verbatim: the struct field is a
+    # `Vector`, so both the argument and its own `primal` method need
+    # `primal(::AbstractArray)`.
+    struct QuadratureGrid
+        nodes::Vector{Float64}
+    end
+    primal(g::QuadratureGrid) = QuadratureGrid(primal(g.nodes))
+
+    grid = QuadratureGrid(collect(0.0:0.5:5.0))
+    weighted = nondifferentiable((g, w) -> sum(g.nodes) * w)
+    @test weighted(grid, 2.0) == sum(grid.nodes) * 2.0
+
+    # A bare array argument works the same way, no user `primal` method needed.
+    @test nondifferentiable(sum)([1.0, 2.0, 3.0]) == 6.0
+end
+
 @testitem "nondifferentiable: a non-primal-strippable result raises a clear MethodError" begin
     using EpiAwareADTools: nondifferentiable, primal
 
-    f = nondifferentiable(x -> [x, x])  # a Vector: no `primal` method covers it
+    # `Real`, `Tuple` and `AbstractArray` are covered; a struct with no
+    # `primal` method of its own is not.
+    struct ADT37Opaque
+        v::Float64
+    end
+
+    f = nondifferentiable(x -> ADT37Opaque(x))
     err = try
         f(1.0)
         nothing

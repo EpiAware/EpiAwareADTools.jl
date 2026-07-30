@@ -38,19 +38,19 @@ to itself (the per-backend `@non_differentiable`/`inactive`/`@zero_derivative`
 rules) to an arbitrary function the caller names, written once here rather
 than threaded by hand through downstream code.
 
-Because differentiation stays the norm and this is an explicit opt-out, `f`'s
-result must be something [`primal`](@ref) can strip — a `Real`, a `Tuple` of
-such, or a type a `primal` method already covers. Wrapping a function whose
-result is not `primal`-strippable raises a `MethodError` naming the missing
-`primal` method, a loud failure rather than a silently wrong derivative; add
-a `primal` method for that result type (the same pattern
+Because differentiation stays the norm and this is an explicit opt-out, every
+argument AND `f`'s result must be something [`primal`](@ref) can strip — a
+`Real`, a `Tuple` or `AbstractArray` of such (nested to any depth), or a type a
+`primal` method already covers. Anything else raises a `MethodError` naming the
+missing `primal` method, a loud failure rather than a silently wrong
+derivative; add a `primal` method for that type (the same pattern
 [`primal_distribution`](@ref) follows for `UnivariateDistribution`) to cover
 it. A STRUCT's constructor is itself callable, so wrapping it the same way —
 `nondifferentiable(QuadratureGrid)` — holds construction out of
 differentiation too, once the struct's own type has a `primal` method (there
 is deliberately no generic reflection-based `primal` fallback for an
-arbitrary struct: `isstructtype` is `true` for `Vector`, `Dict`, `Function`
-and `Module` as well as a user's own type, so a blanket fallback over every
+arbitrary struct: `isstructtype` is `true` for `Dict`, `Function` and
+`Module` as well as a user's own type, so a blanket fallback over every
 struct type would silently mishandle values this package was never asked to
 touch).
 
