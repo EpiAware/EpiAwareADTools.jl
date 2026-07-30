@@ -19,6 +19,10 @@ differentiability `SpecialFunctions.gamma_inc` leaves unimplemented, and their
 shape-parameter derivatives. [`nondifferentiable`](@ref) generalises
 `primal`'s own discipline to an arbitrary user-supplied function: a
 deliberate, user-facing opt-out from differentiation, never a hidden default.
+[`logsumexp_stream`](@ref) is the shared
+streaming log-sum-exp accumulator for an infinite series over an unbounded
+discrete support, stopping only after a run of consecutive terms has left
+the total unchanged rather than at the first negligible term.
 
 Per-backend behaviour (ForwardDiff, ReverseDiff, Enzyme, Mooncake,
 ChainRulesCore) is supplied by package extensions loaded when each backend is
@@ -61,6 +65,7 @@ include("docstrings.jl")
 export primal, primal_distribution
 export cdf_ad_safe, logcdf_ad_safe, ccdf_ad_safe, logccdf_ad_safe, pdf_ad_safe
 export nondifferentiable
+export logsumexp_stream
 
 # Tape-strip helpers: reduce an AD-wrapped scalar/distribution to its primal.
 include("primal.jl")
@@ -76,5 +81,7 @@ include("beta_ad.jl")
 include("ad_safe.jl")
 # The user-facing differentiation opt-out: NonDifferentiable/nondifferentiable.
 include("nondifferentiable.jl")
+# The streaming log-sum-exp accumulator over an unbounded discrete support.
+include("logsumexp_stream.jl")
 
 end # module EpiAwareADTools

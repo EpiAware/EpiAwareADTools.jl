@@ -175,6 +175,15 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
     _push!("nondifferentiable array argument",
         (θ, _obs) -> nondifferentiable(sum)(θ) + θ[2]^2,
         [2.0, 1.5], (Constant(obs),))
+    # `logsumexp_stream` (EpiAwareADTools#39): a parameterised geometric
+    # series Σ_{k≥0} exp(-k·θ), differentiated in θ. Plain generic control
+    # flow with no non-differentiable primitive, so this needs no bespoke
+    # per-backend rule — the scenario exists to confirm every backend
+    # differentiates straight through the accumulator's loop.
+    _push!("logsumexp_stream geometric",
+        (θ, _obs) -> EpiAwareADTools.logsumexp_stream(
+            k -> -k * θ[1]).value,
+        [1.0], (Constant(obs),))
     # Each hook on a `SurvivalDistributions.GeneralizedGamma`, differentiated
     # in all three of its parameters, which the constructor takes in the order
     # `(sigma, nu, gamma)`. The methods live in
@@ -203,10 +212,20 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
             x -> logccdf_ad_safe(SD.GeneralizedGamma(θ[1], θ[2], θ[3]), x),
             obs),
         θ_gg, (Constant(obs),))
+    # `pdf_ad_safe` needs no bespoke GeneralizedGamma method — `logpdf(GG)` is
+    # elementary bar `loggamma` — but it is the half of a survival likelihood
+    # the CDF hooks do not supply, and `loggamma` is exactly what the package's
+    # bespoke Enzyme `gamma` rule exists for. Swept here so the fallthrough is
+    # pinned across the matrix rather than assumed.
+    _push!("pdf_ad_safe GeneralizedGamma",
+        (θ, obs) -> sum(
+            x -> pdf_ad_safe(SD.GeneralizedGamma(θ[1], θ[2], θ[3]), x), obs),
+        θ_gg, (Constant(obs),))
     # The public `logcdf` method the extension adds: `SurvivalDistributions`
     # leaves `logcdf` unclaimed, so this pins that a bare `logcdf` call on a
-    # GeneralizedGamma differentiates rather than falling through to
-    # `StatsFuns._gammalogcdf`.
+    # GeneralizedGamma differentiates rather than falling through to the
+    # generic `log(cdf(d, x))`, which reaches `StatsFuns._gammalogccdf` via
+    # `SurvivalDistributions`' survival-defined `cdf`.
     _push!("logcdf GeneralizedGamma",
         (θ, obs) -> sum(
             x -> logcdf(SD.GeneralizedGamma(θ[1], θ[2], θ[3]), x), obs),
