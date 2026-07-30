@@ -55,22 +55,6 @@ end
     @test logcdf(d, 0.0) == -Inf
 end
 
-@testitem "GeneralizedGamma logcdf is still unclaimed upstream" begin
-    using Distributions: Distributions, logcdf
-    import SurvivalDistributions as SD
-
-    # The extension's `logcdf` method is additive only while
-    # `SurvivalDistributions` defines none of its own. If upstream adds one —
-    # non-breaking for them, `SurvivalDistributions = "0.1"` here — ours
-    # becomes a method-overwriting redefinition that breaks precompilation.
-    # Fail loudly here instead, so the signal is a red test rather than a
-    # package that will not load.
-    owners = Set(
-        parentmodule(m) for m in methods(logcdf, Tuple{SD.GeneralizedGamma, Real})
-    )
-    @test !(SD in owners)
-end
-
 @testitem "GeneralizedGamma pdf needs no bespoke method" begin
     using EpiAwareADTools
     using Distributions: pdf

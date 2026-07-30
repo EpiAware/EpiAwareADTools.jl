@@ -77,6 +77,18 @@ end
 # and breaks precompilation), so they are left to the `cdf_ad_safe` /
 # `ccdf_ad_safe` / `logccdf_ad_safe` hooks. Only `logcdf` is unclaimed and so
 # safely AD-routed at the public method.
+#
+# The method below is therefore additive only while upstream claims no
+# `logcdf(::GeneralizedGamma, ::Real)` of its own. If it ever does — which
+# `SurvivalDistributions = "0.1"` permits and would be non-breaking for them —
+# this becomes an overwrite, and Julia rejects that outright: precompiling this
+# extension fails with "Method overwriting is not permitted during Module
+# precompilation", naming both definitions. No test can add a guard ahead of
+# that. An in-process assertion cannot see the claim (the method table keeps one
+# entry per signature and this definition, loading after upstream, is the one it
+# keeps), and the failure lands while the extension precompiles, before any test
+# body runs. The precompile error is the signal; delete this method when
+# upstream supplies its own.
 logcdf(d::SD.GeneralizedGamma, t::Real) = logcdf_ad_safe(d, t)
 
 end # module
