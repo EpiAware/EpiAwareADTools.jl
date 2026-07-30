@@ -79,13 +79,24 @@ cdf_ad_safe(dg, 3.0), logccdf_ad_safe(dg, 3.0)
 
 The extension also claims `Distributions.logcdf(::GeneralizedGamma, ::Real)`.
 `SurvivalDistributions` defines `logccdf` but no `logcdf`, so a bare `logcdf`
-call otherwise falls through to the generic method and evaluates the inner
-Gamma's non-differentiable log-CDF.
+call otherwise falls through to the generic
+`logcdf(d, x) = log(cdf(d, x))`, and from there to
+`SurvivalDistributions`' own `cdf(GG, t) = 1 - exp(logccdf(d.G, t^γ))` — so it
+lands back on the non-differentiable `_gammalogccdf` too.
 `cdf`, `ccdf`, and `logccdf` are owned by `SurvivalDistributions` and are left
 alone; redefining them would be method-overwriting piracy.
 
 `SurvivalDistributions.LogLogistic` needs no methods: its evaluators are built
 from elementary operations and differentiate through the generic fallback.
+
+!!! note "Far right tail"
+    Like the `Gamma` and `Beta` methods, `logccdf_ad_safe` reconstructs the
+    survival as `log1p(-F)`, which loses precision once `F` rounds to `1` and
+    underflows to `-Inf` further out than the stock evaluator does.
+    For `GeneralizedGamma(1.5, 2.0, 1.3)` the two agree to ~1e-9 up to `x = 20`
+    and diverge beyond it.
+    Right-censored observations far into the tail should be scored against the
+    stock `logccdf` where the gradient is not needed.
 
 ## Upstream target
 
