@@ -26,6 +26,16 @@ using EpiAwareADTools, Distributions
 primal(3.0), primal_distribution(Gamma(2.0, 1.5))
 ```
 
+## What `primal` accepts
+
+A `Real` is stripped to its underlying value; a `Tuple` or `AbstractArray` is
+stripped elementwise into a new container of the same shape, recursing so a
+nesting of either bottoms out at a scalar.
+That covers a distribution's nested parameter tuples and a vector-valued
+hyperparameter such as a grid of integration nodes.
+Anything else raises a `MethodError` naming `primal`, so extend it with a method
+for your own type rather than relying on a fallback.
+
 ## Per-backend behaviour
 
 The generic `primal` is the identity on a plain real, so a non-AD call keeps the

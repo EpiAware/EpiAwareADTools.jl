@@ -13,30 +13,34 @@ keep a non-differentiable hyperparameter — for example a quadrature window
 endpoint, which is just *where* to integrate — off the AD path on every
 backend.
 
-A composite distribution returns nested per-component parameter tuples from
-`params`, so the `Tuple` method strips elementwise (recursing into nested
-tuples). This is what lets [`primal_distribution`](@ref), and any caller
-mapping `primal` over `params(d)`, handle a component whose parameter is itself
-a tuple.
+Containers strip elementwise and recursively, so a nesting of them bottoms out
+at a scalar method. `Tuple` covers the nested per-component parameter tuples a
+composite distribution returns from `params`, which is what lets
+[`primal_distribution`](@ref), and any caller mapping `primal` over `params(d)`,
+handle a component whose parameter is itself a tuple. `AbstractArray` covers a
+vector-valued hyperparameter such as a grid of integration nodes, and returns a
+new container rather than stripping in place.
 
 This is the sanctioned replacement for the underscore-prefixed `_primal` that
 ConvolvedDistributions.jl and CensoredDistributions.jl each carry internally;
 it stays hosted here until those packages depend on it directly.
 
 # Arguments
-- `x`: the value to strip; a plain real is returned unchanged, a tuple is
-  stripped elementwise.
+- `x`: the value to strip; a plain real is returned unchanged, a tuple or array
+  is stripped elementwise into a new container of the same shape.
 
 # Examples
 ```@example
 using EpiAwareADTools
 
-primal(3.0), primal(((1.0, 2.0), 3.0))
+primal(3.0), primal(((1.0, 2.0), 3.0)), primal([1.0, 2.0])
 ```
 """
 primal(x::Real) = x
 
 primal(t::Tuple) = map(primal, t)
+
+primal(a::AbstractArray) = map(primal, a)
 
 @doc """
 Rebuild a distribution with its parameters stripped to their primal values via

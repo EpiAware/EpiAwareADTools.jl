@@ -160,6 +160,21 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
         (θ, _obs) -> _beta_cdf(θ[1], θ[2], θ[3]),
         [1.7, 2.3, 0.85], (Constant(obs_beta),))
 
+    # `nondifferentiable` (EpiAwareADTools#37): `θ[1]` flows only through the
+    # wrapped term, `θ[2]` only through the plain one, so the reference
+    # gradient's first component is EXACTLY zero regardless of backend —
+    # this scenario's whole point is confirming every backend agrees on
+    # that, not just that the numbers happen to match.
+    _push!("nondifferentiable wrapped term",
+        (θ, _obs) -> nondifferentiable(x -> x^2)(θ[1]) + θ[2]^2,
+        [2.0, 1.5], (Constant(obs),))
+    # The same, with the whole live parameter VECTOR as the argument, so
+    # `primal(::AbstractArray)` is swept on every backend. Both components
+    # reach the wrapped term and neither derivative survives it, leaving the
+    # plain term as the only contribution: the gradient is `[0, 2θ[2]]`.
+    _push!("nondifferentiable array argument",
+        (θ, _obs) -> nondifferentiable(sum)(θ) + θ[2]^2,
+        [2.0, 1.5], (Constant(obs),))
     # `logsumexp_stream` (EpiAwareADTools#39): a parameterised geometric
     # series Σ_{k≥0} exp(-k·θ), differentiated in θ. Plain generic control
     # flow with no non-differentiable primitive, so this needs no bespoke

@@ -16,7 +16,10 @@ wrapper package overloads for its own component types; their `Gamma` methods
 route through an analytic gamma-CDF derivative that stands in for the
 differentiability `SpecialFunctions.gamma_inc` leaves unimplemented, and their
 `Beta` methods do the same for `SpecialFunctions.beta_inc`'s missing
-shape-parameter derivatives. [`logsumexp_stream`](@ref) is the shared
+shape-parameter derivatives. [`nondifferentiable`](@ref) generalises
+`primal`'s own discipline to an arbitrary user-supplied function: a
+deliberate, user-facing opt-out from differentiation, never a hidden default.
+[`logsumexp_stream`](@ref) is the shared
 streaming log-sum-exp accumulator for an infinite series over an unbounded
 discrete support, stopping only after a run of consecutive terms has left
 the total unchanged rather than at the first negligible term.
@@ -56,11 +59,12 @@ using DocStringExtensions: @template, DOCSTRING, EXPORTS, IMPORTS, TYPEDEF,
 # are defined (see src/docstrings.jl).
 include("docstrings.jl")
 
-# The tape-strip pair, the AD-safe evaluation hooks, and the streaming
-# log-sum-exp accumulator are the sanctioned public surface downstream
+# The tape-strip pair, the AD-safe evaluation hooks, and the user-facing
+# differentiation opt-out are the sanctioned public surface downstream
 # packages build on.
 export primal, primal_distribution
 export cdf_ad_safe, logcdf_ad_safe, ccdf_ad_safe, logccdf_ad_safe, pdf_ad_safe
+export nondifferentiable
 export logsumexp_stream
 
 # Tape-strip helpers: reduce an AD-wrapped scalar/distribution to its primal.
@@ -75,6 +79,8 @@ include("gamma_ad.jl")
 include("beta_ad.jl")
 # The AD-safe evaluation hooks wrapping cdf/logcdf/ccdf/logccdf/pdf.
 include("ad_safe.jl")
+# The user-facing differentiation opt-out: NonDifferentiable/nondifferentiable.
+include("nondifferentiable.jl")
 # The streaming log-sum-exp accumulator over an unbounded discrete support.
 include("logsumexp_stream.jl")
 

@@ -1,6 +1,6 @@
 module EpiAwareADToolsMooncakeExt
 
-using EpiAwareADTools: primal, _gamma_cdf, _beta_cdf
+using EpiAwareADTools: primal, _gamma_cdf, _beta_cdf, NonDifferentiable
 using Mooncake: Mooncake
 
 # Lifts the `ChainRulesCore.rrule` and `ChainRulesCore.frule` defined in
@@ -27,5 +27,16 @@ Mooncake.@from_chainrules Mooncake.DefaultCtx Tuple{
 # `frule!!` and a zero `rrule!!`, keeping the strip off the AD path on both
 # Mooncake modes.
 Mooncake.@zero_derivative Mooncake.DefaultCtx Tuple{typeof(primal), Real}
+
+# `NonDifferentiable` (EpiAwareADTools#37): the same `@zero_derivative`
+# treatment, generalised from the one specific function `primal` to ANY
+# instance of the wrapper type via the bare (unparametrised) `Vararg`
+# pattern below — one registration covers every user function wrapped with
+# `nondifferentiable`, including a closure, regardless of the wrapped
+# function's own type. Confirmed directly on both Mooncake modes (forward
+# and reverse) and against a closure that captures a live differentiated
+# value: the captured contribution is silently zeroed too, the same as
+# every other supported backend (see `nondifferentiable`'s docstring).
+Mooncake.@zero_derivative Mooncake.DefaultCtx Tuple{NonDifferentiable, Vararg}
 
 end
