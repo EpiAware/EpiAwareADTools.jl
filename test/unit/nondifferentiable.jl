@@ -2,9 +2,10 @@
 # user-facing differentiation opt-out. Non-AD value-level behaviour here
 # (the wrapper returns the plain, primal-stripped result of calling `f`, and
 # raises a clear error for a non-`primal`-strippable return type); backend
-# gradient coverage — including the confirmed-and-documented consequence for
-# a closure that captures a live differentiated value — lives in the `:ad`
-# items under `test/ad/` (the "nondifferentiable" ADFixtures scenario).
+# gradient coverage — including the documented consequence for a closure that
+# captures a live differentiated value — lives in the `:ad` items under
+# `test/ad/` (the "nondifferentiable wrapped term" / "nondifferentiable array
+# argument" / "nondifferentiable captured value" ADFixtures scenarios).
 
 @testitem "nondifferentiable: calls f and returns its (already primal) value" begin
     using EpiAwareADTools: nondifferentiable

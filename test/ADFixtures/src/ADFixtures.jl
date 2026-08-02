@@ -90,8 +90,19 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
 
     out = DIT.Scenario{:gradient, :out}[]
 
-    function _push!(name, f, θ₀, contexts)
-        res1 = with_reference ? _reference(f, θ₀, contexts) : nothing
+    # `reference` pins the expected gradient instead of computing it with
+    # ForwardDiff. Use it where the property under test is the VALUE of the
+    # gradient rather than agreement between backends: a self-computed
+    # reference moves with any regression ForwardDiff itself is subject to,
+    # so the check would stay green while the answer went wrong.
+    function _push!(name, f, θ₀, contexts; reference = nothing)
+        res1 = if !with_reference
+            nothing
+        elseif reference === nothing
+            _reference(f, θ₀, contexts)
+        else
+            reference
+        end
         prep_args = (; x = θ₀, contexts = contexts)
         push!(out,
             res1 === nothing ?
@@ -186,6 +197,19 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
     _push!("nondifferentiable array argument",
         (θ, _obs) -> nondifferentiable(sum)(θ) + θ[2]^2,
         [2.0, 1.5], (Constant(obs),))
+    # A CAPTURED value rather than an argument: `θ[1]` reaches the wrapped
+    # function by closure, so the argument-strip never sees it and only the
+    # wrapper's RESULT-strip (plus the `inactive` / `@zero_derivative` marks
+    # the backends without one rely on) drives its contribution to zero. That
+    # makes this the scenario that pins the result-strip in place; the two
+    # above pass on argument-stripping alone. The reference is written out
+    # rather than taken from ForwardDiff precisely because ForwardDiff is one
+    # of the backends that reads the captured value through the body: drop the
+    # result-strip and its reference would go wrong alongside its gradient,
+    # and the scenario would keep passing. Gradient is `[0, 2θ[2]]`.
+    _push!("nondifferentiable captured value",
+        (θ, _obs) -> nondifferentiable(() -> θ[1]^2)() + θ[2]^2,
+        [2.0, 1.5], (Constant(obs),); reference = [0.0, 3.0])
     # `logsumexp_stream` (EpiAwareADTools#39): a parameterised geometric
     # series Σ_{k≥0} exp(-k·θ), differentiated in θ. Plain generic control
     # flow with no non-differentiable primitive, so this needs no bespoke

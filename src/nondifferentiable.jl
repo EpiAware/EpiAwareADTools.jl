@@ -49,10 +49,10 @@ it. A STRUCT's constructor is itself callable, so wrapping it the same way —
 `nondifferentiable(QuadratureGrid)` — holds construction out of
 differentiation too, once the struct's own type has a `primal` method (there
 is deliberately no generic reflection-based `primal` fallback for an
-arbitrary struct: `isstructtype` is `true` for `Dict`, `Function` and
-`Module` as well as a user's own type, so a blanket fallback over every
-struct type would silently mishandle values this package was never asked to
-touch).
+arbitrary struct: `isstructtype` is `true` for `Dict`, `Module` and every
+concrete function type — a closure, or `typeof(sin)` — as well as a user's
+own type, so a blanket fallback over every struct type would silently
+mishandle values this package was never asked to touch).
 
 CAUTION — a captured value, not just an explicit argument, is also held
 constant: if `f` is a closure over a live differentiated value (rather than
