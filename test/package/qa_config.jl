@@ -46,9 +46,9 @@ const QA_CONFIG = (
     #      expect_phantoms = false,    # true if a third party adds phantoms
     #      broken = false)             # true to quarantine a known ambiguity
     # Only extensions whose triggers are main-test-env deps are listed; the
-    # ChainRulesCore / Enzyme / Mooncake / ReverseDiff extensions are exercised
-    # by the dedicated AD harness (test/ad), which proves gradient correctness
-    # directly.
+    # ChainRulesCore / Enzyme / Mooncake / ReverseDiff / LogExpFunctions x
+    # Mooncake extensions are exercised by the dedicated AD harness (test/ad),
+    # which proves gradient correctness directly.
     extensions = (
         # The partial-Dual `_gamma_cdf` overload set: the unparametrised `Dual`
         # slots keep the "at least one Dual" space unambiguous (a shared-tag

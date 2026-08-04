@@ -13,11 +13,13 @@ using Mooncake: Mooncake
 # `shape == 1` gets a wrong shape-gradient under Mooncake.
 #
 # `LogExpFunctionsChainRulesCoreExt` already ships correct `rrule`s AND
-# `frule`s, so lift both directions rather than re-deriving the maths;
-# ChainRulesCore is a hard dependency of Mooncake, so that extension is always
-# loaded here. `@from_chainrules` rather than `@from_rrule` is what closes the
-# forward-mode half (ComposedDistributions#214) — `@from_rrule` alone leaves
-# Mooncake forward deriving the same wrong zero.
+# `frule`s, so lift both directions rather than re-deriving the maths. That
+# extension fires on ChainRulesCore, which is why ChainRulesCore is a trigger
+# here as well as LogExpFunctions and Mooncake: Mooncake hard-depends on it
+# today, but the rules being lifted do not. `@from_chainrules` rather than
+# `@from_rrule` is what closes the forward-mode half
+# (ComposedDistributions#214) — `@from_rrule` alone leaves Mooncake forward
+# deriving the same wrong zero.
 #
 # Deliberate, narrowly-scoped type piracy on functions this package does not
 # own, hosted here so ComposedDistributions (#99) and DistributionsInference
