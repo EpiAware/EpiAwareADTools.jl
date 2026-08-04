@@ -9,7 +9,8 @@ to a Gamma's shape/scale or a Beta's two shape parameters (and, for the
 internal functions, the evaluation point), across the ForwardDiff /
 ReverseDiff / Enzyme / Mooncake backend matrix. The hook methods the
 `SurvivalDistributions` extension adds are covered the same way, differentiated
-through a `GeneralizedGamma`'s three parameters.
+through a `GeneralizedGamma`'s three parameters. A stock `logpdf(Gamma)`
+scenario pinned at `shape == 1` covers the `xlogy`/`xlog1py` Mooncake rules.
 
 The reference gradient is computed with `ForwardDiff`, which propagates its Dual
 numbers through the package's own gamma-CDF machinery and matches the reverse
@@ -24,7 +25,7 @@ __precompile__(false)
 
 using EpiAwareADTools
 using EpiAwareADTools: _gamma_cdf, _beta_cdf
-using Distributions: Distributions, Gamma, Beta, logcdf
+using Distributions: Distributions, Gamma, Beta, logcdf, logpdf
 # Loads `EpiAwareADToolsSurvivalDistributionsExt`, whose GeneralizedGamma hook
 # methods the survival scenarios below differentiate.
 import SurvivalDistributions as SD
@@ -124,6 +125,16 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
     _push!("pdf_ad_safe Gamma",
         (θ, obs) -> sum(x -> pdf_ad_safe(Gamma(θ[1], θ[2]), x), obs),
         [2.0, 1.0], (Constant(obs),))
+
+    # Stock `logpdf(Gamma)` at shape EXACTLY 1.0, where `gammalogpdf`'s
+    # `xlogy(shape - 1, x / scale)` hits `xlogy` at a zero first argument. The
+    # `xlogy`/`xlog1py` rules in
+    # `EpiAwareADToolsLogExpFunctionsMooncakeExt` are what keep the two
+    # Mooncake modes agreeing with the reference here; without them both
+    # return `-digamma(1)` for the shape component.
+    _push!("logpdf Gamma at shape 1",
+        (θ, obs) -> sum(x -> logpdf(Gamma(θ[1], θ[2]), x), obs),
+        [1.0, 2.0], (Constant(obs),))
 
     # The internal `_gamma_cdf(k, θ, x)` differentiated in all three arguments,
     # exercising the dk / dθ / dx partials of the shared rule directly.
