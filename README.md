@@ -20,7 +20,7 @@ It is deliberately framed as fixes we host while we try to fix things upstream:
 every entry is documented with the upstream package or issue where it ideally
 belongs, and each is deleted once that upstream fix lands.
 
-Two families make up the current surface.
+Three families make up the current surface.
 
 - The tape-strip pair `primal` and `primal_distribution` reduce an AD-wrapped
   scalar or distribution to its underlying primal, keeping a non-differentiable
@@ -33,6 +33,10 @@ Two families make up the current surface.
   stands in for the differentiability `SpecialFunctions.gamma_inc` leaves
   unimplemented, and their `Beta` methods do the same for
   `SpecialFunctions.beta_inc`'s missing shape-parameter derivatives.
+- Correct upstream `ChainRulesCore` rules lifted into a backend that lacks
+  them, currently `LogExpFunctions.xlogy`/`xlog1py` under Mooncake, which
+  otherwise returns a wrong shape-gradient for any Gamma log-density
+  differentiated at `shape == 1`.
 
 Per-backend behaviour for ForwardDiff, ReverseDiff, Enzyme, Mooncake, and
 ChainRulesCore is supplied by package extensions loaded when each backend is

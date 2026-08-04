@@ -35,4 +35,10 @@ jobs:
       # set `group` (GROUP env for the downstream suite) and `allow_fail` (true
       # keeps a failure from reding the run). Empty by default; e.g.:
       #   [{"repo":"EpiAware/SomeDownstream.jl","group":"All"}]
-      downstreams: '[{"repo":"EpiAware/ConvolvedDistributions.jl"}]'
+      # ComposedDistributions and DistributionsInference take their
+      # `xlogy`/`xlog1py` Mooncake rules from this package, so a change that
+      # narrows that extension is a silent wrong-gradient for both.
+      downstreams: >-
+        [{"repo":"EpiAware/ConvolvedDistributions.jl"},
+        {"repo":"EpiAware/ComposedDistributions.jl"},
+        {"repo":"EpiAware/DistributionsInference.jl"}]
