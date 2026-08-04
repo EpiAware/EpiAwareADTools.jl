@@ -17,10 +17,12 @@ pages = [
     "Tools" => [
         "Charter and status" => "tools/index.md",
         "Tape-strip: primal" => "tools/tape-strip.md",
+        "User-facing opt-out: nondifferentiable" => "tools/nondifferentiable.md",
         "AD-safe evaluation hooks" => "tools/ad-safe-hooks.md",
         "Gamma-CDF derivative" => "tools/gamma-cdf.md",
         "Beta-CDF derivative" => "tools/beta-cdf.md",
-        "xlogy/xlog1py Mooncake rules" => "tools/xlogy.md"
+        "xlogy/xlog1py Mooncake rules" => "tools/xlogy.md",
+        "Streaming log-sum-exp: logsumexp_stream" => "tools/logsumexp-stream.md"
     ],
     "API reference" => [
         "Public API" => "lib/public.md",
