@@ -61,6 +61,9 @@ end
     :ad, :mooncake, :mooncake_reverse] begin
     using ADTypes: AutoMooncake
     using DifferentiationInterface: gradient
+    # DI dispatches AutoMooncake through its Mooncake extension, so the item
+    # must load Mooncake itself rather than rely on another item having done so.
+    using Mooncake: Mooncake
     using EpiAwareADTools: primal
 
     g(v) = 2 * v[1] + 3 * primal(v[1])
