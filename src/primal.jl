@@ -88,11 +88,8 @@ function primal_distribution(d::UnivariateDistribution)
     return D(p...)
 end
 
-# `params(::Truncated)` appends the bounds to the inner distribution's own
-# parameters, so the generic rebuild calls `Truncated(::Float64, ...)`, which
-# has no method (#57, #58). Rebuild through the public `truncated` instead:
-# the inner distribution recursively, the bounds by `primal`, including the
-# `nothing` of a one-sided truncation.
+# `params(::Truncated)` has no matching constructor (#57, #58); rebuild
+# through the public `truncated` instead.
 function primal_distribution(d::Truncated)
     return truncated(primal_distribution(d.untruncated);
         lower = primal(d.lower), upper = primal(d.upper))

@@ -30,4 +30,5 @@ EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.
 
 [compat]
 BenchmarkTools = "1"
-Distributions = "0.25"
+# Floored at 0.25.92: matches the main Project.toml floor (see there for why).
+Distributions = "0.25.92"
