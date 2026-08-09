@@ -35,7 +35,7 @@ end
     @test primal([1.0, nothing]) == [1.0, nothing]
 end
 
-@testitem "primal_distribution rebuilds an interval-truncated distribution" begin
+@testitem "primal_distribution rebuilds an interval truncation" begin
     using Distributions: Gamma, Exponential, Truncated, truncated, params, cdf
     using EpiAwareADTools: primal_distribution
 
