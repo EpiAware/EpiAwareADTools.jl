@@ -25,7 +25,8 @@ __precompile__(false)
 
 using EpiAwareADTools
 using EpiAwareADTools: _gamma_cdf, _beta_cdf
-using Distributions: Distributions, Gamma, Beta, logcdf, logpdf
+using Distributions: Distributions, Gamma, Beta, Exponential, Normal,
+                     truncated, logcdf, logpdf, quantile
 # Loads `EpiAwareADToolsSurvivalDistributionsExt`, whose GeneralizedGamma hook
 # methods the survival scenarios below differentiate.
 import SurvivalDistributions as SD
@@ -210,6 +211,27 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
     _push!("nondifferentiable captured value",
         (θ, _obs) -> nondifferentiable(() -> θ[1]^2)() + θ[2]^2,
         [2.0, 1.5], (Constant(obs),); reference = [0.0, 3.0])
+    # `primal_distribution` on a `Truncated` (EpiAwareADTools#57, #58): the
+    # window quantile of a pre-truncated component must be a constant. `θ[1]`
+    # reaches the result ONLY through the strip and `θ[2]` only through the
+    # plain term, so the first gradient component is EXACTLY zero. The
+    # reference is written out for the same reason as the captured-value
+    # scenario above: a ForwardDiff self-reference would move with the very
+    # regression this pins. `Exponential`/`Normal` rather than `Gamma` —
+    # `truncated(Gamma{Dual}, l, u)` cannot be built at all, since
+    # `_logcdf_noninclusive` reaches `gamma_inc` on a `Dual`.
+    _push!("primal_distribution truncated window",
+        (θ, _obs) -> quantile(
+            primal_distribution(truncated(Exponential(θ[1]), 0.5, 10.0)),
+            0.9) + θ[2]^2,
+        [1.5, 2.0], (Constant(obs),); reference = [0.0, 4.0])
+    # The same for a one-sided truncation, which routes the absent bound
+    # through `primal(::Nothing)` on every backend.
+    _push!("primal_distribution left-truncated window",
+        (θ, _obs) -> quantile(
+            primal_distribution(truncated(Normal(θ[1], θ[2]); lower = 0.5)),
+            0.9) + θ[2]^2,
+        [1.5, 2.0], (Constant(obs),); reference = [0.0, 4.0])
     # `logsumexp_stream` (EpiAwareADTools#39): a parameterised geometric
     # series Σ_{k≥0} exp(-k·θ), differentiated in θ. Plain generic control
     # flow with no non-differentiable primitive, so this needs no bespoke
