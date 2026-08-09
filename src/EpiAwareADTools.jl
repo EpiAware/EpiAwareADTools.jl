@@ -46,7 +46,8 @@ module EpiAwareADTools
 # using/import live in this file (kit #105); the extensions import the
 # package's own internals from here.
 using Distributions: Distributions, UnivariateDistribution, Gamma, Beta,
-                     params, shape, scale, pdf, cdf, logcdf, ccdf, logccdf
+                     Truncated, params, shape, scale, pdf, cdf, logcdf, ccdf,
+                     logccdf, truncated, censored
 
 using SpecialFunctions: gamma_inc, loggamma, digamma, beta_inc, logbeta
 

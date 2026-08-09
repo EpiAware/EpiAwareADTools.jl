@@ -19,6 +19,9 @@ fails or returns `NaN`.
 [`primal_distribution`](@ref) rebuilds a distribution from primal parameters.
 A quantity computed from primal parameters is a constant as far as AD is
 concerned, so it stays off the tape.
+`primal_distribution` has dedicated `Truncated`/`Censored` methods because
+their `params` does not round-trip through the positional constructor, and
+raises an `ArgumentError` naming the type for anything else that does not.
 
 ```@example tape-strip
 using EpiAwareADTools, Distributions
@@ -31,6 +34,8 @@ primal(3.0), primal_distribution(Gamma(2.0, 1.5))
 A `Real` is stripped to its underlying value; a `Tuple` or `AbstractArray` is
 stripped elementwise into a new container of the same shape, recursing so a
 nesting of either bottoms out at a scalar.
+`nothing` passes through unchanged, so the absent bound of a one-sided
+`truncated`/`censored` distribution strips alongside its numeric siblings.
 That covers a distribution's nested parameter tuples and a vector-valued
 hyperparameter such as a grid of integration nodes.
 Anything else raises a `MethodError` naming `primal`, so extend it with a method
