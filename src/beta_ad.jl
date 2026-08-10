@@ -110,10 +110,11 @@ end
 # `A * dB_p / B^2` combination into `Inf/Inf` or `Inf - Inf` (NaN). Each
 # iteration rescales the current accumulators (and the previous iterate
 # about to feed the next one) by their shared magnitude once it crosses
-# `sqrt(floatmax(T))` — type-dependent, so Float32 (whose `floatmax` sits
-# ~270 orders below the Float64 literal a fixed threshold would use) is
-# guarded too, with half the exponent range left as headroom against the
-# few orders of per-iteration growth. The two-term recurrence is linear and
+# `sqrt(floatmax(T))` — type-dependent, so Float32 (whose `floatmax` of
+# ~3.4e38 sits ~62 orders below the fixed `1e100` trigger this replaces,
+# which therefore could never fire before Float32 overflow) is guarded
+# too, with half the exponent range left as headroom against the few
+# orders of per-iteration growth. The two-term recurrence is linear and
 # homogeneous in each of the A- and B-histories, so dividing every tracked
 # quantity — A, B and both derivative pairs — by the same factor leaves
 # every ratio the final formulas use (`A / B`, `dA_p / B`, `A * dB_p / B^2`)

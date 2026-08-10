@@ -85,6 +85,12 @@ end
         res_deep = _rib_value_and_partials(x, p, q; maxiter = 4000)
         @test all(isfinite, res)
         @test all(isapprox.(res, res_deep; rtol = 1e-11, atol = 1e-13))
+        # Convergence within half the default ceiling pins an actual
+        # factor-of-two margin, not merely that the ceiling was not hit:
+        # this line is the erosion signal if a future change slows the
+        # fraction down.
+        res_half = _rib_value_and_partials(x, p, q; maxiter = 500)
+        @test all(isapprox.(res_half, res_deep; rtol = 1e-11, atol = 1e-13))
     end
 end
 
