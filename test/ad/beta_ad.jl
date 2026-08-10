@@ -38,6 +38,36 @@
     end
 end
 
+@testitem "_rib_value_and_partials disparate-shape regression (issue #42)" tags=[
+    :ad, :forwarddiff] begin
+    # Boundary-adjacent, wildly disparate p/q regime a plausible
+    # Student-t/LogLogistic/Beta `crps` call site can land in (see issue
+    # #42): before the continued fraction's A_n/B_n accumulators were
+    # rescaled, these overflowed to Inf around n~100, and the final
+    # `A * dB_p / B^2` combination produced NaN for both shape partials.
+    # Values from a direct check against `SpecialFunctions.beta_inc` and a
+    # manual finite-difference ground truth (issue #42's own repro table).
+    using SpecialFunctions: beta_inc
+    using EpiAwareADTools: _rib_value_and_partials
+
+    cases = [
+        (1e5, 0.01, 0.999999),
+        (1e6, 0.001, 0.9999999),
+        (1e7, 0.0001, 0.99999999),
+        (1e3, 0.001, 0.9999),
+        (50.0, 0.02, 0.999)
+    ]
+    for (p, q, x) in cases
+        Ω, dp, dq = _rib_value_and_partials(x, p, q)
+        @test isfinite(Ω)
+        @test isfinite(dp)
+        @test isfinite(dq)
+
+        true_Ω = first(beta_inc(p, q, x))
+        @test isapprox(Ω, true_Ω; rtol = 1e-8)
+    end
+end
+
 @testitem "_beta_cdf_value_and_partials reflection symmetry matches direct computation" tags=[
     :ad, :forwarddiff] begin
     using EpiAwareADTools: _beta_cdf_value_and_partials
