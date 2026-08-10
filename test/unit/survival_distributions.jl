@@ -69,21 +69,22 @@ end
     end
 end
 
-@testitem "GeneralizedGamma logccdf tail agreement and its limit" begin
+@testitem "GeneralizedGamma logccdf tracks the far right tail" begin
     using EpiAwareADTools
     using Distributions: logccdf
     import SurvivalDistributions as SD
 
-    # `logccdf_ad_safe` reconstructs the survival as `log1p(-F)`, so it tracks
-    # the stock evaluator only while `F` stays away from 1. Pin where that
-    # holds, and pin the underflow itself so a future log-space survival
-    # implementation shows up here as a deliberate change rather than silently.
+    # EpiAwareADTools#47: `logccdf_ad_safe` used to reconstruct the survival
+    # as `log1p(-F)`, underflowing to `-Inf` at `x = 30` while the stock
+    # evaluator stayed finite — pinned deliberately in PR #48. `_gamma_cdf`'s
+    # log-survival companion `_gamma_logccdf` now routes through the survival
+    # directly (EpiAwareADTools#47), so the two track each other deep into
+    # the tail instead of diverging; this test replaces that pin with the
+    # fixed behaviour.
     d = SD.GeneralizedGamma(1.5, 2.0, 1.3)
-    for x in (0.4, 1.0, 3.2, 8.0, 15.0, 20.0)
-        @test logccdf_ad_safe(d, x)≈logccdf(d, x) rtol=1e-6
+    for x in (0.4, 1.0, 3.2, 8.0, 15.0, 20.0, 30.0, 50.0, 100.0, 500.0)
+        @test logccdf_ad_safe(d, x)≈logccdf(d, x) rtol=1e-9
     end
-    @test logccdf_ad_safe(d, 30.0) == -Inf
-    @test isfinite(logccdf(d, 30.0))
 end
 
 @testitem "LogLogistic needs no hook method" begin
