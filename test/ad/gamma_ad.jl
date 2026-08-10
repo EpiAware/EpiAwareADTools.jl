@@ -221,26 +221,43 @@ end
     end
 end
 
-@testitem "_gamma_logccdf_value_and_partials floors past underflow" tags=[
+@testitem "_gamma_logccdf_value_and_partials deep-tail gradients" tags=[
     :ad, :forwarddiff] begin
-    # EpiAwareADTools#47: once `Q` itself underflows to a literal `0` in the
-    # working float type, dividing the `_gamma_cdf` partials by it would give
-    # `Inf`/`NaN`. Pin that the partials floor to `0` there instead, while the
-    # primal — unlike the naive `log1p(-F)` this replaces — stays finite.
+    # EpiAwareADTools#47 (PR #61 review): the partials of a *log* survival
+    # converge to finite, non-zero limits in the deep tail — `-dx` is the
+    # hazard rate, which tends to `1/θ` — so they must stay accurate past
+    # the point where `Q` itself underflows, not floor to `0`. For
+    # `Gamma(2, 1)`, `Q(2, z) = (1 + z)exp(-z)` gives closed forms
+    # `dx = -z/(1 + z)` and `dθ = z^2/(1 + z)`; the shape partial is
+    # checked against finite differences of the stock `logccdf`, which
+    # stays finite and accurate here.
     using EpiAwareADTools: _gamma_logccdf_value_and_partials
+    using Distributions: Gamma, logccdf
+    using FiniteDifferences: central_fdm
 
-    Ω, dk, dθ, dx = _gamma_logccdf_value_and_partials(2.0, 1.0, 1000.0)
-    @test isfinite(Ω)
-    @test Ω ≈ -993.0912452206848
-    @test (dk, dθ, dx) == (0.0, 0.0, 0.0)
+    fd = central_fdm(5, 1)
 
-    # A point where `Q` still underflows the naive `log1p(-F)` formula (this
-    # was `-Inf` on `main`) but stays representable directly gets a genuine,
-    # non-floored, finite gradient instead.
-    Ω2, dk2, dθ2, dx2 = _gamma_logccdf_value_and_partials(2.0, 1.0, 40.0)
-    @test isfinite(Ω2)
-    @test all(isfinite, (dk2, dθ2, dx2))
-    @test !(dk2 == 0.0 && dθ2 == 0.0 && dx2 == 0.0)
+    x = 1000.0
+    Ω, dk, dθ, dx = _gamma_logccdf_value_and_partials(2.0, 1.0, x)
+    @test Ω ≈ logccdf(Gamma(2.0, 1.0), x)
+    @test dx ≈ -x / (1 + x) rtol=1e-12
+    @test dθ ≈ x^2 / (1 + x) rtol=1e-12
+    # `Q` has underflowed here, so `dk` comes from the `log(z) - ψ(k)`
+    # asymptote, accurate to `O(1/z)`.
+    @test dk ≈ fd(k -> logccdf(Gamma(k, 1.0), x), 2.0) rtol=2e-3
+
+    # A point where the naive `log1p(-F)` formula was `-Inf` on `main` but
+    # `Q` is still a normal float exercises the exact-series `dk` path.
+    x2 = 40.0
+    Ω2, dk2, dθ2, dx2 = _gamma_logccdf_value_and_partials(2.0, 1.0, x2)
+    @test Ω2 ≈ logccdf(Gamma(2.0, 1.0), x2)
+    @test dx2 ≈ -x2 / (1 + x2) rtol=1e-10
+    @test dθ2 ≈ x2^2 / (1 + x2) rtol=1e-10
+    @test dk2 ≈ fd(k -> logccdf(Gamma(k, 1.0), x2), 2.0) rtol=1e-6
+
+    # No NaN/Inf far beyond the underflow boundary either.
+    Ω3, dk3, dθ3, dx3 = _gamma_logccdf_value_and_partials(2.0, 1.0, 1.0e6)
+    @test all(isfinite, (Ω3, dk3, dθ3, dx3))
 end
 
 @testitem "_gamma_logccdf rrule zero-input guards" tags=[
