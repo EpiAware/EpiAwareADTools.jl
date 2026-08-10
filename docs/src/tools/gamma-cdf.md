@@ -32,6 +32,14 @@ The Enzyme extension also carries a rule for `SpecialFunctions.gamma`, whose own
 Enzyme lowering is wrong by a factor of `Γ(x)` (an upstream Enzyme bug); the
 gamma density in `_gamma_cdf_value_and_partials` needs it.
 
+## The log-survival companion
+
+`_gamma_logccdf(k, θ, x) = log(Q(k, x/θ))` is `_gamma_cdf`'s counterpart for the log survival rather than the CDF.
+Naively computing it as `log1p(-_gamma_cdf(k, θ, x))` underflows to `-Inf` once the CDF rounds to exactly `1` in the working float type.
+That is far short of where the stock evaluator, which never forms `1 - F` as a literal float, stays finite (EpiAwareADTools#47).
+`_gamma_logccdf` instead reads the survival from `gamma_inc`'s own independently-computed second output while it stays representable, falling back to `loggamma(k, z) - loggamma(k)` once it does not — the same branch structure `StatsFuns._gammalogccdf` uses for the stock, non-differentiable evaluator.
+`_gamma_logccdf_value_and_partials` reuses `_gamma_cdf_value_and_partials`'s `(dk, dθ, dx)` divided by this accurate survival rather than by a literal `1 - P`, and carries the same per-backend rules as `_gamma_cdf`.
+
 This machinery is internal.
 Consumers reach it through the [AD-safe hooks](@ref ad-safe-hooks); the
 [Internal API](@ref "Internal Documentation") page carries the full docstrings.

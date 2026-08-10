@@ -90,13 +90,9 @@ alone; redefining them would be method-overwriting piracy.
 from elementary operations and differentiate through the generic fallback.
 
 !!! note "Far right tail"
-    Like the `Gamma` and `Beta` methods, `logccdf_ad_safe` reconstructs the
-    survival as `log1p(-F)`, which loses precision once `F` rounds to `1` and
-    underflows to `-Inf` further out than the stock evaluator does.
-    For `GeneralizedGamma(1.5, 2.0, 1.3)` the two agree to ~1e-9 up to `x = 20`
-    and diverge beyond it.
-    Right-censored observations far into the tail should be scored against the
-    stock `logccdf` where the gradient is not needed.
+    `logccdf_ad_safe` on a `Gamma` (and so, transitively, on a `GeneralizedGamma`) routes through `_gamma_logccdf` (see the [Gamma-CDF derivative](@ref gamma-cdf) page), which reads the survival directly from `SpecialFunctions.gamma_inc` rather than reconstructing it as `1 - F`.
+    Its *value* therefore tracks the stock `logccdf` at implementation tolerance across the whole domain, including deep into the right tail where `F` itself has already rounded to `1` (EpiAwareADTools#47).
+    The *gradient* floors to `0` only once the survival itself underflows below the smallest representable positive float (around `logccdf ≈ -708`), a regime no realistic right-censored observation reaches.
 
 ## Upstream target
 
