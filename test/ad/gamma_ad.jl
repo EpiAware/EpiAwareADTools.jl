@@ -221,7 +221,7 @@ end
     end
 end
 
-@testitem "_gamma_logccdf_value_and_partials floors gradients past underflow" tags=[
+@testitem "_gamma_logccdf_value_and_partials floors past underflow" tags=[
     :ad, :forwarddiff] begin
     # EpiAwareADTools#47: once `Q` itself underflows to a literal `0` in the
     # working float type, dividing the `_gamma_cdf` partials by it would give
@@ -243,7 +243,8 @@ end
     @test !(dk2 == 0.0 && dθ2 == 0.0 && dx2 == 0.0)
 end
 
-@testitem "_gamma_logccdf rrule zero-input guards" tags=[:ad, :forwarddiff] begin
+@testitem "_gamma_logccdf rrule zero-input guards" tags=[
+    :ad, :forwarddiff] begin
     # Mirrors `_gamma_cdf rrule zero-input guards` for the log-space survival
     # rule.
     using ChainRulesCore: rrule, NoTangent
