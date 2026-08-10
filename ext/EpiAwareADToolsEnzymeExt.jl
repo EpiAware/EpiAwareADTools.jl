@@ -1,6 +1,7 @@
 module EpiAwareADToolsEnzymeExt
 
 using EpiAwareADTools: primal, _gamma_cdf, _gamma_cdf_value_and_partials,
+                       _gamma_logccdf, _gamma_logccdf_value_and_partials,
                        _beta_cdf, _beta_cdf_value_and_partials,
                        NonDifferentiable
 using Enzyme: Enzyme
@@ -36,6 +37,18 @@ EnzymeRules.inactive(::NonDifferentiable, args...) = nothing
 # differentiating `SpecialFunctions.gamma_inc` directly.
 EnzymeRules.@easy_rule(_gamma_cdf(k::Real, θ::Real, x::Real),
     @setup(_vp=_gamma_cdf_value_and_partials(k, θ, x),
+        dk=_vp[2],
+        dθ=_vp[3],
+        dx=_vp[4],),
+    (dk, dθ, dx))
+
+# `EnzymeRules.@easy_rule` for `_gamma_logccdf`, the `_gamma_cdf` rule's
+# log-space survival counterpart (EpiAwareADTools#47). The analytical
+# (dk, dθ, dx) come from `_gamma_logccdf_value_and_partials` in
+# `src/gamma_ad.jl`, the same source-of-truth helper the ChainRules rrule and
+# the ForwardDiff Dual path use.
+EnzymeRules.@easy_rule(_gamma_logccdf(k::Real, θ::Real, x::Real),
+    @setup(_vp=_gamma_logccdf_value_and_partials(k, θ, x),
         dk=_vp[2],
         dθ=_vp[3],
         dx=_vp[4],),

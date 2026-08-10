@@ -1,6 +1,6 @@
 module EpiAwareADToolsReverseDiffExt
 
-import EpiAwareADTools: primal, _gamma_cdf, _beta_cdf
+import EpiAwareADTools: primal, _gamma_cdf, _gamma_logccdf, _beta_cdf
 using ReverseDiff: ReverseDiff, @grad_from_chainrules, TrackedReal
 
 # Strip a ReverseDiff `TrackedReal` to its primal value. Reading `.value` off
@@ -25,6 +25,18 @@ primal(x::TrackedReal) = primal(ReverseDiff.value(x))
 @grad_from_chainrules _gamma_cdf(k::TrackedReal, θ::Real, x::Real)
 @grad_from_chainrules _gamma_cdf(k::Real, θ::TrackedReal, x::Real)
 @grad_from_chainrules _gamma_cdf(k::Real, θ::Real, x::TrackedReal)
+
+# Same lift for `_gamma_logccdf(k, θ, x) = log(Q(k, x/θ))`, the log-space
+# survival companion to `_gamma_cdf` (EpiAwareADTools#47), defined in
+# `EpiAwareADToolsChainRulesCoreExt`.
+@grad_from_chainrules _gamma_logccdf(
+    k::TrackedReal, θ::TrackedReal, x::TrackedReal)
+@grad_from_chainrules _gamma_logccdf(k::TrackedReal, θ::TrackedReal, x::Real)
+@grad_from_chainrules _gamma_logccdf(k::TrackedReal, θ::Real, x::TrackedReal)
+@grad_from_chainrules _gamma_logccdf(k::Real, θ::TrackedReal, x::TrackedReal)
+@grad_from_chainrules _gamma_logccdf(k::TrackedReal, θ::Real, x::Real)
+@grad_from_chainrules _gamma_logccdf(k::Real, θ::TrackedReal, x::Real)
+@grad_from_chainrules _gamma_logccdf(k::Real, θ::Real, x::TrackedReal)
 
 # Same lift for `_beta_cdf(α, β, x) = I_x(α, β)`, defined in
 # `EpiAwareADToolsChainRulesCoreExt`. Without this, ReverseDiff falls back to

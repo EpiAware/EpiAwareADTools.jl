@@ -1,6 +1,7 @@
 module EpiAwareADToolsChainRulesCoreExt
 
 using EpiAwareADTools: primal, _gamma_cdf, _gamma_cdf_value_and_partials,
+                       _gamma_logccdf, _gamma_logccdf_value_and_partials,
                        _beta_cdf, _beta_cdf_value_and_partials,
                        NonDifferentiable
 using ChainRulesCore: ChainRulesCore, NoTangent
@@ -43,6 +44,27 @@ end
 function ChainRulesCore.frule(
         (_, Δk, Δθ, Δx), ::typeof(_gamma_cdf), k::Real, θ::Real, x::Real)
     Ω, dk, dθ, dx = _gamma_cdf_value_and_partials(k, θ, x)
+    return Ω, dk * Δk + dθ * Δθ + dx * Δx
+end
+
+# Reverse- and forward-mode rules for `_gamma_logccdf(k, θ, x) =
+# log(Q(k, x/θ))`, the log-space survival companion to `_gamma_cdf`
+# (EpiAwareADTools#47). The analytical partials live in
+# `_gamma_logccdf_value_and_partials` (in `src/gamma_ad.jl`), which reuses
+# `_gamma_cdf_value_and_partials`'s `(dk, dθ, dx)` divided by an
+# accurately-computed `Q` rather than a literal `1 - P`.
+function ChainRulesCore.rrule(
+        ::typeof(_gamma_logccdf), k::Real, θ::Real, x::Real)
+    Ω, dk, dθ, dx = _gamma_logccdf_value_and_partials(k, θ, x)
+    function _gamma_logccdf_pullback(ȳ)
+        return (NoTangent(), dk * ȳ, dθ * ȳ, dx * ȳ)
+    end
+    return Ω, _gamma_logccdf_pullback
+end
+
+function ChainRulesCore.frule(
+        (_, Δk, Δθ, Δx), ::typeof(_gamma_logccdf), k::Real, θ::Real, x::Real)
+    Ω, dk, dθ, dx = _gamma_logccdf_value_and_partials(k, θ, x)
     return Ω, dk * Δk + dθ * Δθ + dx * Δx
 end
 

@@ -105,3 +105,96 @@ function _gamma_cdf_value_and_partials(k::Real, θ::Real, x::Real)
     dx = f
     return (Ω, dk, dθ, dx)
 end
+
+@doc raw"""
+Accurate `log(Q(a, z))`, the log of the regularised UPPER incomplete gamma
+`Q(a, z) = 1 - P(a, z)`, for [`_gamma_logccdf`](@ref) and its
+value-and-partials companion.
+
+`SpecialFunctions.gamma_inc` returns `(P, Q)` from independent
+series/continued-fraction evaluations rather than by subtracting `P` from
+`1`, so its own `Q` output stays a representable, accurate value far beyond
+where `log1p(-P)` underflows — `P` rounds to exactly `1` in the working
+float type well before `Q` itself underflows to `0`. `log(Q)` is read
+directly from that output while it stays representable; once `Q` itself
+underflows, the log-space form `loggamma(a, z) - loggamma(a)` (the log of
+the *unnormalised* upper incomplete gamma over `log Γ(a)`, itself finite far
+beyond that point) takes over. This mirrors the branch structure
+`StatsFuns._gammalogccdf` uses for the stock (non-differentiable) evaluator,
+so the two agree at implementation tolerance across the whole domain rather
+than only where `log1p(-P)` happens to hold up.
+"""
+function _gamma_logQ(a::Real, z::Real)
+    l, u = gamma_inc(a, z)
+    if u < floatmin(typeof(u))
+        return loggamma(a, z) - loggamma(a)
+    elseif u < 0.7
+        return log(u)
+    else
+        return log1p(-l)
+    end
+end
+
+@doc """
+AD-safe Gamma log survival, `log(Q(k, x/θ))` — the analogue of
+[`_gamma_cdf`](@ref) for the log-space survival rather than the CDF.
+
+Unlike the naive `log1p(-_gamma_cdf(k, θ, x))`, this never forms the CDF as a
+literal float and subtracts it from `1`: [`_gamma_logQ`](@ref) reads the
+survival from `SpecialFunctions.gamma_inc`'s own second output, computed
+independently of the CDF, so precision survives far into the right tail
+where the CDF itself has already rounded to exactly `1`
+(EpiAwareADTools#47). AD coverage follows the same per-backend pattern as
+`_gamma_cdf`: [`_gamma_logccdf_value_and_partials`](@ref) supplies the
+shared primal and partials the ChainRules rule, the ForwardDiff `Dual`
+methods, and the Enzyme rule all consume.
+"""
+function _gamma_logccdf(k::Real, θ::Real, x::Real)
+    x <= 0 && return zero(k) * zero(θ) * zero(x)
+    kp, zp = promote(k, x / θ)
+    return _gamma_logQ(kp, zp)
+end
+
+@doc """
+Primal value and analytical partials `(Ω, dk, dθ, dx)` for
+[`_gamma_logccdf`](@ref).
+
+Reuses [`_gamma_cdf_value_and_partials`](@ref)'s `(dk, dθ, dx)` — the
+survival's partials are the CDF's partials negated, `∂Q/∂param =
+-∂P/∂param` — dividing each by the accurately-computed `Q = exp(Ω)` rather
+than a literal `1 - P`, which is exactly the cancellation that underflows
+the primal in the first place. `Q` itself underflows to `0` only once
+[`_gamma_logQ`](@ref)'s own `loggamma`-based branch has taken over from
+`gamma_inc`'s representable `Q`; the partials fall back to `0` there rather
+than dividing by a literal `0`. The true partials are themselves
+vanishingly small in that regime (the survival has fallen below the
+smallest representable positive float), so a `0` gradient is a defensible
+floor: every AD backend keeps differentiating without producing an `Inf` or
+`NaN`.
+
+The `x <= 0` branch returns the same constant `(0, 0, 0, 0)`
+[`_gamma_cdf_value_and_partials`](@ref) uses for its primal-only path, since
+`log(Q(k, 0)) = log(1) = 0`.
+"""
+function _gamma_logccdf_value_and_partials(k::Real, θ::Real, x::Real)
+    if x <= 0
+        T = float(promote_type(typeof(k), typeof(θ), typeof(x)))
+        z = zero(T)
+        return (z, z, z, z)
+    end
+    z = x / θ
+    Ω = _gamma_logQ(k, z)
+    Q = exp(Ω)
+    f = pdf(Gamma(k, θ), x)
+    dPk = _grad_p_a_series(k, z)
+    if Q > 0
+        dk = -dPk / Q
+        dx = -f / Q
+        dθ = (x / θ) * f / Q
+    else
+        dk = zero(dPk)
+        dx = zero(f)
+        dθ = zero(f)
+    end
+    return (Ω, dk, dθ, dx)
+end
