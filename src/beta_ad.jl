@@ -27,7 +27,7 @@ Beta Function." *Journal of Statistical Software*, 3(1), 1-20. The
 recurrence structure (coefficients `a_n`/`b_n` and their partials) follows
 the reference C implementation in Caner Türkmen's
 [betaincder](https://github.com/canerturkmen/betaincder) (MIT licensed),
-ported here to Julia with a fixed 500-term default this package's own
+ported here to Julia with a 1000-term default ceiling this package's own
 test suite validates against the paper's published table and against
 `SpecialFunctions.beta_inc` for widely disparate `p`/`q` near the `x`
 boundary, where fewer terms converge too slowly for full precision
@@ -91,14 +91,6 @@ end
     return -(p^2 * f) / (q * (p + 2n - 2) * (p + 2n))
 end
 
-# Rescale threshold for the continued-fraction accumulators below. Chosen
-# well under sqrt(floatmax()) (~1.34e154) with wide margin: growth between
-# consecutive checks (one per iteration) is at most a few orders of
-# magnitude for these coefficients, and the accumulators are checked (and
-# rescaled) every iteration, so this bound is never approached from below
-# in a single step.
-const _RIB_RESCALE_THRESHOLD = 1e100
-
 # One continued-fraction pass computing I_x(p,q) and (∂I/∂p, ∂I/∂q)
 # simultaneously (sharing the a_n/b_n primal terms across both partials).
 # Only valid for `x <= p/(p+q)`; the caller applies the reflection symmetry
@@ -109,16 +101,19 @@ const _RIB_RESCALE_THRESHOLD = 1e100
 # combined with the overflow below, NaN shape partials). The loop below
 # exits as soon as the ratios the final formulas depend on stop moving
 # (see `rtol`), so well-behaved, balanced-shape calls — the common case —
-# converge in far fewer terms and do not pay for the 500-term ceiling only
+# converge in far fewer terms and do not pay for the 1000-term ceiling only
 # the disparate regime needs.
 #
 # For widely disparate `p`/`q` near the `x` boundary, the raw A_n/B_n
-# accumulators (and their derivative counterparts) can grow past Float64's
-# ~1.8e308 ceiling before the fraction converges, turning the final
+# accumulators (and their derivative counterparts) can grow past the float
+# type's ceiling before the fraction converges, turning the final
 # `A * dB_p / B^2` combination into `Inf/Inf` or `Inf - Inf` (NaN). Each
 # iteration rescales the current accumulators (and the previous iterate
 # about to feed the next one) by their shared magnitude once it crosses
-# `_RIB_RESCALE_THRESHOLD`. The two-term recurrence is linear and
+# `sqrt(floatmax(T))` — type-dependent, so Float32 (whose `floatmax` sits
+# ~270 orders below the Float64 literal a fixed threshold would use) is
+# guarded too, with half the exponent range left as headroom against the
+# few orders of per-iteration growth. The two-term recurrence is linear and
 # homogeneous in each of the A- and B-histories, so dividing every tracked
 # quantity — A, B and both derivative pairs — by the same factor leaves
 # every ratio the final formulas use (`A / B`, `dA_p / B`, `A * dB_p / B^2`)
@@ -126,8 +121,16 @@ const _RIB_RESCALE_THRESHOLD = 1e100
 # is the standard renormalisation modified-Lentz-style continued-fraction
 # evaluators use to stay within floating-point range.
 function _rib_value_and_partials(x::Real, p::Real, q::Real;
-        rtol::Real = 1e-13, maxiter::Int = 500)
+        rtol::Real = 1e-13, atol::Real = 1e-13, maxiter::Int = 1000)
     T = float(promote_type(typeof(x), typeof(p), typeof(q)))
+    rescale_threshold = sqrt(floatmax(T))
+    # Exit tolerances floor at 100·eps(T): the Float64 defaults pass
+    # through unchanged (100·eps ≈ 2.2e-14 < 1e-13), while a
+    # reduced-precision T, whose iterates never stabilise to a Float64
+    # tolerance, still gets a reachable exit instead of always running to
+    # `maxiter`.
+    rtolT = max(T(rtol), 100 * eps(T))
+    atolT = max(T(atol), 100 * eps(T))
     Am2, Am1 = one(T), one(T)
     Bm2, Bm1 = zero(T), one(T)
     dAm2_p, dAm1_p = zero(T), zero(T)
@@ -154,6 +157,7 @@ function _rib_value_and_partials(x::Real, p::Real, q::Real;
     G_p = dA_p / B - r_A * dB_p / B
     G_q = dA_q / B - r_A * dB_q / B
 
+    converged = false
     for n in 1:maxiter
         a_n = _rib_a(x, p, q, n)
         b_n = _rib_b(x, p, q, n)
@@ -170,8 +174,8 @@ function _rib_value_and_partials(x::Real, p::Real, q::Real;
         dB_p = da_p * Bm2 + a_n * dBm2_p + db_p * Bm1 + b_n * dBm1_p
         dB_q = da_q * Bm2 + a_n * dBm2_q + db_q * Bm1 + b_n * dBm1_q
 
-        s = max(abs(A), abs(B))
-        if s > _RIB_RESCALE_THRESHOLD
+        s = max(abs(A), abs(B), abs(dA_p), abs(dB_p), abs(dA_q), abs(dB_q))
+        if s > rescale_threshold
             A, B = A / s, B / s
             dA_p, dB_p = dA_p / s, dB_p / s
             dA_q, dB_q = dA_q / s, dB_q / s
@@ -187,15 +191,27 @@ function _rib_value_and_partials(x::Real, p::Real, q::Real;
         dAm2_q, dAm1_q = dAm1_q, dA_q
         dBm2_q, dBm1_q = dBm1_q, dB_q
 
+        # The `atol` floor deliberately matches `rtol`: where `G_p`/`G_q`
+        # are naturally below it the derivative contribution is negligible
+        # and a first-iteration exit is the right answer. Both exit
+        # tolerances sit an order below the tightest downstream test
+        # tolerance (the direct-vs-reflected branch comparison in
+        # `test/ad/beta_ad.jl` at 1e-12), which notes the coupling at its
+        # end.
         r_A_new = A / B
         G_p_new = dA_p / B - r_A_new * dB_p / B
         G_q_new = dA_q / B - r_A_new * dB_q / B
-        converged = isapprox(r_A_new, r_A; rtol = rtol, atol = rtol) &&
-                    isapprox(G_p_new, G_p; rtol = rtol, atol = rtol) &&
-                    isapprox(G_q_new, G_q; rtol = rtol, atol = rtol)
+        converged = isapprox(r_A_new, r_A; rtol = rtolT, atol = atolT) &&
+                    isapprox(G_p_new, G_p; rtol = rtolT, atol = atolT) &&
+                    isapprox(G_q_new, G_q; rtol = rtolT, atol = atolT)
         r_A, G_p, G_q = r_A_new, G_p_new, G_q_new
         converged && break
     end
+    # An under-converged return is quieter than the NaN it replaced (#42),
+    # so leave a trace; the disparate-shape tests assert a wide margin
+    # against this ceiling.
+    converged ||
+        @debug "_rib_value_and_partials hit maxiter without converging" x p q maxiter
 
     logK = p * log(x) + (q - 1) * log1p(-x) - log(p) - logbeta(p, q)
     K = exp(logK)
