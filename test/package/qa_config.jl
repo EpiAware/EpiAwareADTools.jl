@@ -22,7 +22,8 @@ const QA_CONFIG = (
     # extension too, which imports its parent's gamma internals plus
     # ForwardDiff's Dual plumbing — the standard extension pattern.
     ei_ignore = (:Dual, :value, :partials, :_gamma_cdf,
-        :_gamma_cdf_value_and_partials),
+        :_gamma_cdf_value_and_partials, :_gamma_logccdf,
+        :_gamma_logccdf_value_and_partials),
 
     # Docstring `crossref_ignore`: upstream names docstrings link to via
     # `[`name`](@ref)`, e.g. (:pdf, :cdf, :logpdf).
