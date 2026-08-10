@@ -83,9 +83,12 @@ AD-safe `logccdf(dist, u)`: the log survival ``\log(1 - F(u))``.
 
 `logccdf_ad_safe` is the log-survival companion to [`logcdf_ad_safe`](@ref).
 Generic dispatch falls through to `Distributions.logccdf`; the `Gamma` method
-routes through the AD-safe ``F`` so a survival term differentiates w.r.t. the
-Gamma shape/scale (the stock `logccdf(::Gamma)` calls `_gammalogccdf`, which has
-no `ForwardDiff.Dual` shape method and errors).
+routes through [`_gamma_logccdf`](@ref), which computes the survival directly
+rather than as ``1 - F``, so a survival term differentiates w.r.t. the Gamma
+shape/scale (the stock `logccdf(::Gamma)` calls `_gammalogccdf`, which has no
+`ForwardDiff.Dual` shape method and errors) *and* stays accurate far into the
+right tail, where ``F`` itself has already rounded to `1`
+(EpiAwareADTools#47).
 
 An extension point: a downstream package adds methods for its own component
 types, the same pattern as [`pdf_ad_safe`](@ref).
@@ -105,7 +108,7 @@ logccdf_ad_safe(dist::UnivariateDistribution, u::Real) = logccdf(dist, u)
 
 function logccdf_ad_safe(dist::Gamma, u::Real)
     u <= 0 && return zero(float(u))
-    return log1p(-_gamma_cdf(shape(dist), scale(dist), u))
+    return _gamma_logccdf(shape(dist), scale(dist), u)
 end
 
 function logccdf_ad_safe(dist::Beta, u::Real)

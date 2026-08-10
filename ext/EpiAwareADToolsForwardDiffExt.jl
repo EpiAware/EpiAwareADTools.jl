@@ -1,7 +1,8 @@
 module EpiAwareADToolsForwardDiffExt
 
-import EpiAwareADTools: primal, _gamma_cdf, _beta_cdf
+import EpiAwareADTools: primal, _gamma_cdf, _gamma_logccdf, _beta_cdf
 using EpiAwareADTools: _gamma_cdf_value_and_partials,
+                       _gamma_logccdf_value_and_partials,
                        _beta_cdf_value_and_partials, logcdf_ad_safe,
                        logccdf_ad_safe
 using Distributions: Distributions, Gamma, Beta
@@ -80,6 +81,43 @@ function _gamma_cdf(k::Real, θ::Dual, x::Real)
 end
 function _gamma_cdf(k::Real, θ::Real, x::Dual)
     return _dual_impl(k, θ, x)
+end
+
+# Same seven-method coverage for `_gamma_logccdf(k, θ, x) = log(Q(k, x/θ))`
+# (EpiAwareADTools#47), deferring to `_gamma_logccdf_value_and_partials`
+# instead of `_gamma_cdf_value_and_partials`.
+function _logccdf_dual_impl(k, θ, x)
+    T = _dual_tag(k, θ, x)
+    N = _dual_width(k, θ, x)
+    kv = _val(k)
+    θv = _val(θ)
+    xv = _val(x)
+    Ω, dk, dθ, dx = _gamma_logccdf_value_and_partials(kv, θv, xv)
+    new_partials = dk * _par(k, Val(N)) + dθ * _par(θ, Val(N)) +
+                   dx * _par(x, Val(N))
+    return Dual{T}(Ω, new_partials)
+end
+
+function _gamma_logccdf(k::Dual, θ::Dual, x::Dual)
+    return _logccdf_dual_impl(k, θ, x)
+end
+function _gamma_logccdf(k::Dual, θ::Dual, x::Real)
+    return _logccdf_dual_impl(k, θ, x)
+end
+function _gamma_logccdf(k::Dual, θ::Real, x::Dual)
+    return _logccdf_dual_impl(k, θ, x)
+end
+function _gamma_logccdf(k::Real, θ::Dual, x::Dual)
+    return _logccdf_dual_impl(k, θ, x)
+end
+function _gamma_logccdf(k::Dual, θ::Real, x::Real)
+    return _logccdf_dual_impl(k, θ, x)
+end
+function _gamma_logccdf(k::Real, θ::Dual, x::Real)
+    return _logccdf_dual_impl(k, θ, x)
+end
+function _gamma_logccdf(k::Real, θ::Real, x::Dual)
+    return _logccdf_dual_impl(k, θ, x)
 end
 
 # Same seven-method coverage for `_beta_cdf(α, β, x) = I_x(α, β)`, deferring

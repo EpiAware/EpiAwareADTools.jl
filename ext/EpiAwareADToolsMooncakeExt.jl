@@ -1,6 +1,7 @@
 module EpiAwareADToolsMooncakeExt
 
-using EpiAwareADTools: primal, _gamma_cdf, _beta_cdf, NonDifferentiable
+using EpiAwareADTools: primal, _gamma_cdf, _gamma_logccdf, _beta_cdf,
+                       NonDifferentiable
 using Mooncake: Mooncake
 
 # Lifts the `ChainRulesCore.rrule` and `ChainRulesCore.frule` defined in
@@ -14,6 +15,11 @@ using Mooncake: Mooncake
 # `nothing`, and errors with `iterate(::Nothing)`.
 Mooncake.@from_chainrules Mooncake.DefaultCtx Tuple{
     typeof(_gamma_cdf), Real, Real, Real}
+
+# Same lift for `_gamma_logccdf(k, θ, x) = log(Q(k, x/θ))`, the log-space
+# survival companion to `_gamma_cdf` (EpiAwareADTools#47).
+Mooncake.@from_chainrules Mooncake.DefaultCtx Tuple{
+    typeof(_gamma_logccdf), Real, Real, Real}
 
 # Same lift for `_beta_cdf(α, β, x) = I_x(α, β)`.
 Mooncake.@from_chainrules Mooncake.DefaultCtx Tuple{

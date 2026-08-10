@@ -16,14 +16,17 @@ import SurvivalDistributions as SD
 #
 # The `Gamma` methods of the hooks already differentiate the regularised lower
 # incomplete gamma via `_gamma_cdf`, whose per-backend rules live in this
-# package's AD extensions. Routing the inner Gamma through `cdf_ad_safe` at the
-# transformed point `t^gamma` makes the GeneralizedGamma CDF family
-# differentiate everywhere the plain `Gamma` path does, mirroring the
-# `*_ad_safe(::Gamma)` methods. The `t^gamma` transform and the inner
-# `shape`/`scale` (functions of `nu`, `gamma`, `sigma`) are elementary, so the
-# gradient flows through all three parameters. GeneralizedGamma's constructor
-# promotes its parameters into the inner `Gamma{T}`, so a `Dual` / `Tracked`
-# parameter survives into `d.G` and the `_gamma_cdf` rules do the rest.
+# package's AD extensions. Routing the inner Gamma through `cdf_ad_safe` (or,
+# for `logccdf_ad_safe`, directly through `_gamma_logccdf` via the already-fixed
+# `logccdf_ad_safe(::Gamma)`) at the transformed point `t^gamma` makes the
+# GeneralizedGamma CDF family differentiate everywhere the plain `Gamma` path
+# does, mirroring the `*_ad_safe(::Gamma)` methods and — for `logccdf` — its
+# far-right-tail accuracy too (EpiAwareADTools#47). The `t^gamma` transform and
+# the inner `shape`/`scale` (functions of `nu`, `gamma`, `sigma`) are
+# elementary, so the gradient flows through all three parameters.
+# GeneralizedGamma's constructor promotes its parameters into the inner
+# `Gamma{T}`, so a `Dual` / `Tracked` parameter survives into `d.G` and the
+# `_gamma_cdf` / `_gamma_logccdf` rules do the rest.
 #
 # `SurvivalDistributions.LogLogistic` needs no special AD routing: its
 # `logccdf` is built from elementary operations (`log1p`/`exp`), so it
@@ -56,7 +59,12 @@ end
 
 function logccdf_ad_safe(d::SD.GeneralizedGamma, u::Real)
     u <= 0 && return zero(float(u))
-    return log1p(-_gg_cdf(d, u))
+    # Routes through the fixed `logccdf_ad_safe(::Gamma)` (EpiAwareADTools#47)
+    # rather than `log1p(-_gg_cdf(d, u))`: the inner Gamma's log survival is
+    # computed directly, so it stays accurate far beyond where the CDF-based
+    # form underflows to `-Inf`. The `t^gamma` transform is elementary, so the
+    # gradient still flows through all three GeneralizedGamma parameters.
+    return logccdf_ad_safe(d.G, u^d.gamma)
 end
 
 # The public `logcdf(::GeneralizedGamma, t)` must be AD-safe too, not just the
