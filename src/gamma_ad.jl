@@ -173,12 +173,17 @@ point where `Q` itself underflows. `dx` and `dθ` both reduce to the ratio
 conditioned to arbitrary tail depth. `dk` divides
 [`_grad_p_a_series`](@ref)'s `∂P/∂a` by `gamma_inc`'s own
 accurately-computed `Q` (returned alongside `Ω` by [`_gamma_logQ`](@ref),
-never recovered as `exp(Ω)`) while `Q` is large enough that the series'
-absolute rounding error stays negligible against `∂Q/∂a`, and hands over
-to [`_dlogQ_da_tail_series`](@ref) below that — the naive quotient loses
-relative accuracy long before `Q` underflows, flipping sign entirely by
-`Q ≈ 1e-16`. Every backend therefore receives finite, accurate gradients
-across the whole tail (EpiAwareADTools#47).
+never recovered as `exp(Ω)`) while `Q ≥ √eps(T)` — the scaling at which
+the series' absolute rounding error stays negligible against `∂Q/∂a` —
+and hands over to [`_dlogQ_da_tail_series`](@ref) below that: the naive
+quotient loses relative accuracy long before `Q` underflows, flipping
+sign entirely by `Q ≈ 1e-16` in Float64. The type-relative threshold
+keeps a BigFloat caller on the exact quotient to the depth its precision
+genuinely supports. At reduced precision (Float32) the two paths cross at
+a higher error floor, so `dk` carries `~1e-5` relative error in the
+transition band — a documented limit rather than a tunable. Every backend
+receives finite, accurate gradients across the whole tail
+(EpiAwareADTools#47).
 
 The `x <= 0` branch returns the same constant `(0, 0, 0, 0)`
 [`_gamma_cdf_value_and_partials`](@ref) uses for its primal-only path, since
@@ -191,11 +196,11 @@ function _gamma_logccdf_value_and_partials(k::Real, θ::Real, x::Real)
         return (z, z, z, z)
     end
     z = x / θ
-    Ω, Q = _gamma_logQ(k, z)
+    Ω, Q = _gamma_logQ(promote(k, z)...)
     r = exp(logpdf(Gamma(k, θ), x) - Ω)
     dx = -r
     dθ = (x / θ) * r
-    if Q >= oftype(Q, 1e-8)
+    if Q >= sqrt(eps(typeof(Q)))
         dk = -_grad_p_a_series(k, z) / Q
     else
         dk = _dlogQ_da_tail_series(promote(k, z)...)
@@ -223,14 +228,15 @@ term, `~e^{-(z-a)}`. Both exits watch the combined magnitude
 (`tₙ` hits an exact `0`) while the derivative series `sₙ` keeps
 contributing, and stopping on `tₙ` there silently truncates `S'`. Used by
 [`_gamma_logccdf_value_and_partials`](@ref) once
-`Q < 1e-8`: there `z - a ≳ 16` for any shape, so the truncation error is
-at worst `~1e-7` and falls exponentially with depth, while the exact
-`∂P/∂a / Q` quotient it replaces is *losing* a digit for every decade `Q`
-drops (measured against finite differences of the stock `logccdf`, both
-paths hold `~1e-6` relative error or better at the crossover, the series
-reaching `~1e-12` once `Q < 1e-10`). The iteration cap covers the slow
-geometric regime (`a` large, `z/a` near `1`) and the `eps` exit takes over
-when the terms stop mattering before they start growing.
+`Q < √eps(T)` (`~1.5e-8` in Float64): there `z - a ≳ 16` for any shape,
+so the truncation error is at worst `~1e-7` and falls exponentially with
+depth, while the exact `∂P/∂a / Q` quotient it replaces is *losing* a
+digit for every decade `Q` drops (measured against finite differences of
+the stock `logccdf`, both paths hold `~1e-6` relative error or better at
+the crossover, the series reaching `~1e-12` once `Q < 1e-10`). The
+iteration count to the `eps` exit grows like `z - a ~ 5.6√a` in the slow
+geometric regime (`a` large, `z/a` near `1`), so the cap binds only above
+shape `~2e5`, where accuracy degrades gradually rather than failing.
 """
 function _dlogQ_da_tail_series(a::T, z::T) where {T <: Real}
     t = one(T)
@@ -238,7 +244,7 @@ function _dlogQ_da_tail_series(a::T, z::T) where {T <: Real}
     S = one(T)
     Sp = zero(T)
     prev = one(T)
-    for n in 1:500
+    for n in 1:2500
         snew = (s * (a - n) + t) / z
         tnew = t * (a - n) / z
         mag = abs(tnew) + abs(snew)

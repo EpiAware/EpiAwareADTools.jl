@@ -94,7 +94,7 @@ from elementary operations and differentiate through the generic fallback.
     Its *value* therefore tracks the stock `logccdf` at implementation tolerance across the whole domain, including deep into the right tail where `F` itself has already rounded to `1` (EpiAwareADTools#47).
     The *gradient* stays finite and accurate to arbitrary tail depth as well.
     The `x` and `θ` partials reduce to the hazard-type ratio `f/Q` and are formed in log space as `exp(logpdf - logccdf)`, which never underflows.
-    The shape partial divides the exact series by `gamma_inc`'s accurately-computed survival while that is at least `1e-8`, and switches to a corrected asymptotic series beyond, holding a relative error of about `1e-6` or better at every depth.
+    The shape partial divides the exact series by `gamma_inc`'s accurately-computed survival while that is at least `√eps` of the working float type, and switches to a corrected asymptotic series beyond, holding a relative error of about `1e-6` or better at every depth in Float64.
 
 ## Upstream target
 
