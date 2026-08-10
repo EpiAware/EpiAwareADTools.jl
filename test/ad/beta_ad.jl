@@ -68,6 +68,33 @@ end
     end
 end
 
+@testitem "_beta_cdf_value_and_partials matches Distributions.jl across disparate shapes" tags=[
+    :ad, :forwarddiff] begin
+    # Property check (issue #42): the AD-traced primal comes from
+    # `_beta_cdf_value_and_partials`'s continued fraction, not directly
+    # from `SpecialFunctions.beta_inc` (see `_beta_cdf` vs. the ChainRules
+    # extension's `rrule`/`frule`), so it must independently agree with
+    # Distributions.jl's own `Beta` CDF/PDF — not merely avoid NaN — across
+    # a spread of shape-ratio magnitudes and boundary-adjacent `x`,
+    # covering both the direct and reflected continued-fraction branches.
+    using Distributions: Beta, cdf, pdf
+    using EpiAwareADTools: _beta_cdf_value_and_partials
+
+    grid = [
+        (1e5, 0.01, 0.999999), (1e6, 0.001, 0.9999999),
+        (1e7, 0.0001, 0.99999999), (1e3, 0.001, 0.9999),
+        (50.0, 0.02, 0.999), (0.01, 1e5, 0.000001),
+        (0.001, 1e6, 1e-7), (1e4, 1e-3, 0.9995),
+        (2.0, 1e5, 0.00005), (1e5, 2.0, 0.99998)
+    ]
+    for (α, β, x) in grid
+        Ω, dα, dβ, dx = _beta_cdf_value_and_partials(α, β, x)
+        @test all(isfinite, (Ω, dα, dβ, dx))
+        @test isapprox(Ω, cdf(Beta(α, β), x); rtol = 1e-9)
+        @test isapprox(dx, pdf(Beta(α, β), x); rtol = 1e-9)
+    end
+end
+
 @testitem "_beta_cdf_value_and_partials reflection symmetry matches direct computation" tags=[
     :ad, :forwarddiff] begin
     using EpiAwareADTools: _beta_cdf_value_and_partials
