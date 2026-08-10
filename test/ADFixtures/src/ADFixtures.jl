@@ -219,6 +219,32 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
         (θ, _obs) -> EpiAwareADTools.logsumexp_stream(
             k -> -k * θ[1]).value,
         [1.0], (Constant(obs),))
+    # `fixed_draw` (EpiAwareADTools#38): `θ[1]` reaches the result only
+    # through the pinned draw, so its derivative is EXACTLY zero regardless
+    # of backend — the reparameterisation-trick complement of the
+    # `nondifferentiable` scenarios above, pinned the same way. `θ[2]`
+    # reaches the plain term, giving gradient `[0, 2θ[2]]`.
+    _push!("fixed_draw pinned realisation",
+        (θ, _obs) -> fixed_draw(θ[1]) + θ[2]^2,
+        [2.0, 1.5], (Constant(obs),))
+    # `ad_eltype` (EpiAwareADTools#38): a `Vector{Float64}` buffer errors
+    # the moment a `Dual`/`TrackedReal` term is written into it (see
+    # `test/unit/reparameterise.jl`'s direct demonstration), so this
+    # scenario seeds the buffer at `ad_eltype(θ)` instead and checks the
+    # gradient survives on every backend — including Enzyme and Mooncake,
+    # which never surface a wrapper type to the primal computation at all,
+    # so `ad_eltype` is a harmless `Float64` no-op there and the buffer
+    # never risked the footgun in the first place.
+    _push!("ad_eltype seeds a differentiable buffer",
+        (θ, obs) -> begin
+            T = EpiAwareADTools.ad_eltype(θ)
+            buf = Vector{T}(undef, length(obs))
+            for (i, x) in enumerate(obs)
+                buf[i] = θ[1] * x + θ[2]
+            end
+            sum(buf)
+        end,
+        [2.0, 1.5], (Constant(obs),))
     # Each hook on a `SurvivalDistributions.GeneralizedGamma`, differentiated
     # in all three of its parameters, which the constructor takes in the order
     # `(sigma, nu, gamma)`. The methods live in
