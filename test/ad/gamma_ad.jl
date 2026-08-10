@@ -242,18 +242,25 @@ end
     @test Ω ≈ logccdf(Gamma(2.0, 1.0), x)
     @test dx ≈ -x / (1 + x) rtol=1e-12
     @test dθ ≈ x^2 / (1 + x) rtol=1e-12
-    # `Q` has underflowed here, so `dk` comes from the `log(z) - ψ(k)`
-    # asymptote, accurate to `O(1/z)`.
-    @test dk ≈ fd(k -> logccdf(Gamma(k, 1.0), x), 2.0) rtol=2e-3
+    # `Q < 1e-8` here, so `dk` comes from `_dlogQ_da_tail_series`, whose
+    # optimal-truncation error is far below the test tolerance.
+    @test dk ≈ fd(k -> logccdf(Gamma(k, 1.0), x), 2.0) rtol=1e-6
 
-    # A point where the naive `log1p(-F)` formula was `-Inf` on `main` but
-    # `Q` is still a normal float exercises the exact-series `dk` path.
+    # `Q ≈ 1.7e-16` at `x = 40`: the naive `∂P/∂a / Q` quotient has the
+    # WRONG SIGN here (series rounding error amplified by the tiny `Q`),
+    # so this point pins the tail-series path in the mid-tail too.
     x2 = 40.0
     Ω2, dk2, dθ2, dx2 = _gamma_logccdf_value_and_partials(2.0, 1.0, x2)
     @test Ω2 ≈ logccdf(Gamma(2.0, 1.0), x2)
     @test dx2 ≈ -x2 / (1 + x2) rtol=1e-10
     @test dθ2 ≈ x2^2 / (1 + x2) rtol=1e-10
     @test dk2 ≈ fd(k -> logccdf(Gamma(k, 1.0), x2), 2.0) rtol=1e-6
+
+    # `Q ≈ 7e-7` at `x = 17` stays on the exact `∂P/∂a / Q` path, which
+    # is still accurate this side of the `1e-8` switchover.
+    x4 = 17.0
+    Ω4, dk4, dθ4, dx4 = _gamma_logccdf_value_and_partials(2.0, 1.0, x4)
+    @test dk4 ≈ fd(k -> logccdf(Gamma(k, 1.0), x4), 2.0) rtol=1e-6
 
     # No NaN/Inf far beyond the underflow boundary either.
     Ω3, dk3, dθ3, dx3 = _gamma_logccdf_value_and_partials(2.0, 1.0, 1.0e6)

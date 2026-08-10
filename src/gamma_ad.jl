@@ -123,15 +123,21 @@ beyond that point) takes over. This mirrors the branch structure
 `StatsFuns._gammalogccdf` uses for the stock (non-differentiable) evaluator,
 so the two agree at implementation tolerance across the whole domain rather
 than only where `log1p(-P)` happens to hold up.
+
+Returns `(log(Q), Q)`, with `Q` taken straight from `gamma_inc` rather than
+recovered as `exp(log(Q))` — exponentiating costs `|log Q| * eps` relative
+error and lands in the subnormals well before `gamma_inc`'s own `Q` does —
+so [`_gamma_logccdf_value_and_partials`](@ref) can divide by the accurate
+survival.
 """
 function _gamma_logQ(a::Real, z::Real)
     l, u = gamma_inc(a, z)
     if u < floatmin(typeof(u))
-        return loggamma(a, z) - loggamma(a)
+        return loggamma(a, z) - loggamma(a), u
     elseif u < 0.7
-        return log(u)
+        return log(u), u
     else
-        return log1p(-l)
+        return log1p(-l), u
     end
 end
 
@@ -152,25 +158,27 @@ methods, and the Enzyme rule all consume.
 function _gamma_logccdf(k::Real, θ::Real, x::Real)
     x <= 0 && return zero(k) * zero(θ) * zero(x)
     kp, zp = promote(k, x / θ)
-    return _gamma_logQ(kp, zp)
+    return first(_gamma_logQ(kp, zp))
 end
 
 @doc """
 Primal value and analytical partials `(Ω, dk, dθ, dx)` for
 [`_gamma_logccdf`](@ref).
 
-Reuses [`_gamma_cdf_value_and_partials`](@ref)'s `(dk, dθ, dx)` — the
-survival's partials are the CDF's partials negated, `∂Q/∂param =
--∂P/∂param` — dividing each by the accurately-computed `Q = exp(Ω)` rather
-than a literal `1 - P`, which is exactly the cancellation that underflows
-the primal in the first place. `Q` itself underflows to `0` only once
-[`_gamma_logQ`](@ref)'s own `loggamma`-based branch has taken over from
-`gamma_inc`'s representable `Q`; the partials fall back to `0` there rather
-than dividing by a literal `0`. The true partials are themselves
-vanishingly small in that regime (the survival has fallen below the
-smallest representable positive float), so a `0` gradient is a defensible
-floor: every AD backend keeps differentiating without producing an `Inf` or
-`NaN`.
+The partials of a *log* survival are relative derivatives, and for a Gamma
+they converge to finite, non-zero limits in the deep tail — `-dx` is the
+hazard rate, which tends to `1/θ` — so they must stay accurate past the
+point where `Q` itself underflows. `dx` and `dθ` both reduce to the ratio
+`f/Q` and are formed fully in log space as `exp(logpdf - Ω)`, well
+conditioned to arbitrary tail depth. `dk` divides
+[`_grad_p_a_series`](@ref)'s `∂P/∂a` by `gamma_inc`'s own
+accurately-computed `Q` (returned alongside `Ω` by [`_gamma_logQ`](@ref),
+never recovered as `exp(Ω)`) while `Q` is large enough that the series'
+absolute rounding error stays negligible against `∂Q/∂a`, and hands over
+to [`_dlogQ_da_tail_series`](@ref) below that — the naive quotient loses
+relative accuracy long before `Q` underflows, flipping sign entirely by
+`Q ≈ 1e-16`. Every backend therefore receives finite, accurate gradients
+across the whole tail (EpiAwareADTools#47).
 
 The `x <= 0` branch returns the same constant `(0, 0, 0, 0)`
 [`_gamma_cdf_value_and_partials`](@ref) uses for its primal-only path, since
@@ -183,18 +191,63 @@ function _gamma_logccdf_value_and_partials(k::Real, θ::Real, x::Real)
         return (z, z, z, z)
     end
     z = x / θ
-    Ω = _gamma_logQ(k, z)
-    Q = exp(Ω)
-    f = pdf(Gamma(k, θ), x)
-    dPk = _grad_p_a_series(k, z)
-    if Q > 0
-        dk = -dPk / Q
-        dx = -f / Q
-        dθ = (x / θ) * f / Q
+    Ω, Q = _gamma_logQ(k, z)
+    r = exp(logpdf(Gamma(k, θ), x) - Ω)
+    dx = -r
+    dθ = (x / θ) * r
+    if Q >= oftype(Q, 1e-8)
+        dk = -_grad_p_a_series(k, z) / Q
     else
-        dk = zero(dPk)
-        dx = zero(f)
-        dθ = zero(f)
+        dk = _dlogQ_da_tail_series(promote(k, z)...)
     end
     return (Ω, dk, dθ, dx)
+end
+
+@doc raw"""
+`∂ log Q(a, z) / ∂a` deep in the right tail, from the large-`z` asymptotic
+expansion of the unnormalised upper incomplete gamma,
+`Γ(a, z) = z^{a-1} e^{-z} S` with `S = Σₙ ∏ⱼ₌₁ⁿ (a - j) / zⁿ`, giving
+
+```math
+\frac{∂ \log Q}{∂a} = \log z - ψ(a) + \frac{S'}{S}
+```
+
+`S` and its `a`-derivative `S'` are accumulated by the joint recurrence
+`tₙ = tₙ₋₁ (a - n) / z`, `sₙ = (sₙ₋₁ (a - n) + tₙ₋₁) / z`, which never
+divides by `(a - j)` and so is exact when `a` is an integer and the product
+terminates. The expansion is asymptotic, not convergent: its terms shrink
+until `n ≈ z - a` and then grow without bound, so the loop stops at that
+optimal-truncation point, leaving an error of roughly the last included
+term, `~e^{-(z-a)}`. Both exits watch the combined magnitude
+`|tₙ| + |sₙ|`, not `tₙ` alone: at integer `a` the value series terminates
+(`tₙ` hits an exact `0`) while the derivative series `sₙ` keeps
+contributing, and stopping on `tₙ` there silently truncates `S'`. Used by
+[`_gamma_logccdf_value_and_partials`](@ref) once
+`Q < 1e-8`: there `z - a ≳ 16` for any shape, so the truncation error is
+at worst `~1e-7` and falls exponentially with depth, while the exact
+`∂P/∂a / Q` quotient it replaces is *losing* a digit for every decade `Q`
+drops (measured against finite differences of the stock `logccdf`, both
+paths hold `~1e-6` relative error or better at the crossover, the series
+reaching `~1e-12` once `Q < 1e-10`). The iteration cap covers the slow
+geometric regime (`a` large, `z/a` near `1`) and the `eps` exit takes over
+when the terms stop mattering before they start growing.
+"""
+function _dlogQ_da_tail_series(a::T, z::T) where {T <: Real}
+    t = one(T)
+    s = zero(T)
+    S = one(T)
+    Sp = zero(T)
+    prev = one(T)
+    for n in 1:500
+        snew = (s * (a - n) + t) / z
+        tnew = t * (a - n) / z
+        mag = abs(tnew) + abs(snew)
+        mag > prev && break
+        S += tnew
+        Sp += snew
+        s, t = snew, tnew
+        prev = mag
+        mag < eps(T) * (abs(S) + abs(Sp)) && break
+    end
+    return log(z) - digamma(a) + Sp / S
 end
