@@ -27,8 +27,12 @@ Beta Function." *Journal of Statistical Software*, 3(1), 1-20. The
 recurrence structure (coefficients `a_n`/`b_n` and their partials) follows
 the reference C implementation in Caner Türkmen's
 [betaincder](https://github.com/canerturkmen/betaincder) (MIT licensed),
-ported here to Julia with the fixed 100-term default this package's own
-test suite validates against the paper's published table.
+ported here to Julia with a fixed 500-term default this package's own
+test suite validates against the paper's published table and against
+`SpecialFunctions.beta_inc` for widely disparate `p`/`q` near the `x`
+boundary, where fewer terms converge too slowly for full precision
+(issue #42; the upstream 100-term default left both the primal and the
+partials under-converged there).
 """
 @inline function _rib_f(x::Real, p::Real, q::Real)
     return q * x / (p * (1 - x))
@@ -87,13 +91,38 @@ end
     return -(p^2 * f) / (q * (p + 2n - 2) * (p + 2n))
 end
 
+# Rescale threshold for the continued-fraction accumulators below. Chosen
+# well under sqrt(floatmax()) (~1.34e154) with wide margin: growth between
+# consecutive checks (one per iteration) is at most a few orders of
+# magnitude for these coefficients, and the accumulators are checked (and
+# rescaled) every iteration, so this bound is never approached from below
+# in a single step.
+const _RIB_RESCALE_THRESHOLD = 1e100
+
 # One continued-fraction pass computing I_x(p,q) and (∂I/∂p, ∂I/∂q)
 # simultaneously (sharing the a_n/b_n primal terms across both partials).
 # Only valid for `x <= p/(p+q)`; the caller applies the reflection symmetry
-# for the complementary regime. 100 terms matches the upstream reference
-# implementation's default and is what this package's tests validate
-# against the published Boik & Robinson-Cox table.
-function _rib_value_and_partials(x::Real, p::Real, q::Real; maxiter::Int = 100)
+# for the complementary regime. This package's tests validate the fixed
+# term count both against the published Boik & Robinson-Cox table and
+# against `SpecialFunctions.beta_inc` at widely disparate `p`/`q` near the
+# `x` boundary (issue #42), where convergence is markedly slower: the
+# original 100-term default left ~1e-5 relative error in the primal there
+# (and, combined with the overflow below, NaN shape partials).
+#
+# For widely disparate `p`/`q` near the `x` boundary, the raw A_n/B_n
+# accumulators (and their derivative counterparts) can grow past Float64's
+# ~1.8e308 ceiling before the fraction converges, turning the final
+# `A * dB_p / B^2` combination into `Inf/Inf` or `Inf - Inf` (NaN). Each
+# iteration rescales the current accumulators (and the previous iterate
+# about to feed the next one) by their shared magnitude once it crosses
+# `_RIB_RESCALE_THRESHOLD`. The two-term recurrence is linear and
+# homogeneous in each of the A- and B-histories, so dividing every tracked
+# quantity — A, B and both derivative pairs — by the same factor leaves
+# every ratio the final formulas use (`A / B`, `dA_p / B`, `A * dB_p / B^2`)
+# exactly unchanged; only the (irrelevant) common scale is discarded. This
+# is the standard renormalisation modified-Lentz-style continued-fraction
+# evaluators use to stay within floating-point range.
+function _rib_value_and_partials(x::Real, p::Real, q::Real; maxiter::Int = 500)
     T = float(promote_type(typeof(x), typeof(p), typeof(q)))
     Am2, Am1 = one(T), one(T)
     Bm2, Bm1 = zero(T), one(T)
@@ -119,6 +148,16 @@ function _rib_value_and_partials(x::Real, p::Real, q::Real; maxiter::Int = 100)
         B = Bm2 * a_n + Bm1 * b_n
         dB_p = da_p * Bm2 + a_n * dBm2_p + db_p * Bm1 + b_n * dBm1_p
         dB_q = da_q * Bm2 + a_n * dBm2_q + db_q * Bm1 + b_n * dBm1_q
+
+        s = max(abs(A), abs(B))
+        if s > _RIB_RESCALE_THRESHOLD
+            A, B = A / s, B / s
+            dA_p, dB_p = dA_p / s, dB_p / s
+            dA_q, dB_q = dA_q / s, dB_q / s
+            Am1, Bm1 = Am1 / s, Bm1 / s
+            dAm1_p, dBm1_p = dAm1_p / s, dBm1_p / s
+            dAm1_q, dBm1_q = dAm1_q / s, dBm1_q / s
+        end
 
         Am2, Am1 = Am1, A
         Bm2, Bm1 = Bm1, B
