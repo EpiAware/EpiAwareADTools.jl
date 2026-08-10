@@ -102,12 +102,15 @@ const _RIB_RESCALE_THRESHOLD = 1e100
 # One continued-fraction pass computing I_x(p,q) and (∂I/∂p, ∂I/∂q)
 # simultaneously (sharing the a_n/b_n primal terms across both partials).
 # Only valid for `x <= p/(p+q)`; the caller applies the reflection symmetry
-# for the complementary regime. This package's tests validate the fixed
-# term count both against the published Boik & Robinson-Cox table and
-# against `SpecialFunctions.beta_inc` at widely disparate `p`/`q` near the
-# `x` boundary (issue #42), where convergence is markedly slower: the
-# original 100-term default left ~1e-5 relative error in the primal there
-# (and, combined with the overflow below, NaN shape partials).
+# for the complementary regime. `maxiter` caps the term count needed for
+# the hardest cases this package's tests validate against `beta_inc` at
+# widely disparate `p`/`q` near the `x` boundary (issue #42): the original
+# 100-term default left ~1e-5 relative error in the primal there (and,
+# combined with the overflow below, NaN shape partials). The loop below
+# exits as soon as the ratios the final formulas depend on stop moving
+# (see `rtol`), so well-behaved, balanced-shape calls — the common case —
+# converge in far fewer terms and do not pay for the 500-term ceiling only
+# the disparate regime needs.
 #
 # For widely disparate `p`/`q` near the `x` boundary, the raw A_n/B_n
 # accumulators (and their derivative counterparts) can grow past Float64's
@@ -122,7 +125,8 @@ const _RIB_RESCALE_THRESHOLD = 1e100
 # exactly unchanged; only the (irrelevant) common scale is discarded. This
 # is the standard renormalisation modified-Lentz-style continued-fraction
 # evaluators use to stay within floating-point range.
-function _rib_value_and_partials(x::Real, p::Real, q::Real; maxiter::Int = 500)
+function _rib_value_and_partials(x::Real, p::Real, q::Real;
+        rtol::Real = 1e-13, maxiter::Int = 500)
     T = float(promote_type(typeof(x), typeof(p), typeof(q)))
     Am2, Am1 = one(T), one(T)
     Bm2, Bm1 = zero(T), one(T)
@@ -132,6 +136,23 @@ function _rib_value_and_partials(x::Real, p::Real, q::Real; maxiter::Int = 500)
     dBm2_q, dBm1_q = zero(T), zero(T)
     A, B = Am1, Bm1
     dA_p, dB_p, dA_q, dB_q = dAm1_p, dBm1_p, dAm1_q, dBm1_q
+
+    # Scale- and reparametrisation-invariant quantities the closed-form
+    # F1_p/F1_q formulas below actually reduce to: `A * dB_p / B^2 ==
+    # (A / B) * (dB_p / B)`, so `F1_p == r_A * (...) + G_p` with
+    # `G_p = dA_p / B - r_A * dB_p / B` (and the `q` analogue for `G_q`).
+    # `dA_p / B` and `dB_p / B` individually keep drifting for hundreds of
+    # iterations even in the well-behaved cases below (a redundant degree
+    # of freedom in how the recurrence splits between the two), but that
+    # drift cancels in `G_p`/`G_q`, which converge in a handful of terms;
+    # tracking the raw ratios instead of this combination was tried and
+    # measured to never trigger the exit before `maxiter`, defeating the
+    # point. `r_A` (and thus `G_p`/`G_q`) survives the rescaling below
+    # unaffected, since numerator and denominator share the same factor
+    # `s`.
+    r_A = A / B
+    G_p = dA_p / B - r_A * dB_p / B
+    G_q = dA_q / B - r_A * dB_q / B
 
     for n in 1:maxiter
         a_n = _rib_a(x, p, q, n)
@@ -165,6 +186,15 @@ function _rib_value_and_partials(x::Real, p::Real, q::Real; maxiter::Int = 500)
         dBm2_p, dBm1_p = dBm1_p, dB_p
         dAm2_q, dAm1_q = dAm1_q, dA_q
         dBm2_q, dBm1_q = dBm1_q, dB_q
+
+        r_A_new = A / B
+        G_p_new = dA_p / B - r_A_new * dB_p / B
+        G_q_new = dA_q / B - r_A_new * dB_q / B
+        converged = isapprox(r_A_new, r_A; rtol = rtol, atol = rtol) &&
+                    isapprox(G_p_new, G_p; rtol = rtol, atol = rtol) &&
+                    isapprox(G_q_new, G_q; rtol = rtol, atol = rtol)
+        r_A, G_p, G_q = r_A_new, G_p_new, G_q_new
+        converged && break
     end
 
     logK = p * log(x) + (q - 1) * log1p(-x) - log(p) - logbeta(p, q)
