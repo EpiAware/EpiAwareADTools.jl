@@ -6,7 +6,7 @@ and AD workarounds. Every entry is a fix hosted here while the real fix is
 pursued upstream, so each is documented with the upstream package or issue it
 stands in for and deleted once that lands.
 
-Three families make up the current surface. The tape-strip pair [`primal`](@ref)
+Five families make up the current surface. The tape-strip pair [`primal`](@ref)
 and [`primal_distribution`](@ref) reduce an AD-wrapped scalar or distribution to
 its underlying primal, keeping a non-differentiable hyperparameter (an
 integration window, a clamp location) off the AD path. The AD-safe evaluation
@@ -22,7 +22,13 @@ deliberate, user-facing opt-out from differentiation, never a hidden default.
 [`logsumexp_stream`](@ref) is the shared
 streaming log-sum-exp accumulator for an infinite series over an unbounded
 discrete support, stopping only after a run of consecutive terms has left
-the total unchanged rather than at the first negligible term.
+the total unchanged rather than at the first negligible term. The
+reparameterisation-trick pair [`fixed_draw`](@ref) and [`ad_eltype`](@ref)
+is the mirror image of the tape-strip pair: [`fixed_draw`](@ref) pins a
+random draw as a constant realisation the parameters vary against, and
+[`ad_eltype`](@ref) resolves the type a parameter-dependent accumulator
+combined with such a draw should be seeded at, so its derivative is not
+silently severed.
 
 Per-backend behaviour (ForwardDiff, ReverseDiff, Enzyme, Mooncake,
 ChainRulesCore) is supplied by package extensions loaded when each backend is
@@ -66,6 +72,7 @@ export primal, primal_distribution
 export cdf_ad_safe, logcdf_ad_safe, ccdf_ad_safe, logccdf_ad_safe, pdf_ad_safe
 export nondifferentiable
 export logsumexp_stream
+export fixed_draw, ad_eltype
 
 # Tape-strip helpers: reduce an AD-wrapped scalar/distribution to its primal.
 include("primal.jl")
@@ -83,5 +90,7 @@ include("ad_safe.jl")
 include("nondifferentiable.jl")
 # The streaming log-sum-exp accumulator over an unbounded discrete support.
 include("logsumexp_stream.jl")
+# The reparameterisation-trick pair: fixed_draw/ad_eltype.
+include("reparameterise.jl")
 
 end # module EpiAwareADTools
