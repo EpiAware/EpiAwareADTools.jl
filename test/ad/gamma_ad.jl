@@ -242,7 +242,7 @@ end
     @test Ω ≈ logccdf(Gamma(2.0, 1.0), x)
     @test dx ≈ -x / (1 + x) rtol=1e-12
     @test dθ ≈ x^2 / (1 + x) rtol=1e-12
-    # `Q < 1e-8` here, so `dk` comes from `_dlogQ_da_tail_series`, whose
+    # `Q < √eps` here, so `dk` comes from `_dlogQ_da_tail_series`, whose
     # optimal-truncation error is far below the test tolerance.
     @test dk ≈ fd(k -> logccdf(Gamma(k, 1.0), x), 2.0) rtol=1e-6
 
@@ -257,7 +257,7 @@ end
     @test dk2 ≈ fd(k -> logccdf(Gamma(k, 1.0), x2), 2.0) rtol=1e-6
 
     # `Q ≈ 7e-7` at `x = 17` stays on the exact `∂P/∂a / Q` path, which
-    # is still accurate this side of the `1e-8` switchover.
+    # is still accurate this side of the `√eps` switchover.
     x4 = 17.0
     Ω4, dk4, dθ4, dx4 = _gamma_logccdf_value_and_partials(2.0, 1.0, x4)
     @test dk4 ≈ fd(k -> logccdf(Gamma(k, 1.0), x4), 2.0) rtol=1e-6
