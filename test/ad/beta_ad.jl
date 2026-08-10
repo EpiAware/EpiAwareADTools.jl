@@ -68,6 +68,40 @@ end
     end
 end
 
+@testitem "_rib_value_and_partials converges well under maxiter" tags=[
+    :ad, :forwarddiff] begin
+    # Hitting `maxiter` returns the last iterate with only a `@debug`
+    # trace, so pin that the default ceiling has a wide margin: raising
+    # `maxiter` well past it must not change the answer, even one step
+    # more disparate than the harshest #42 grid point.
+    using EpiAwareADTools: _rib_value_and_partials
+
+    cases = [
+        (1e7, 0.0001, 0.99999999),
+        (1e8, 1e-5, 0.999999999)
+    ]
+    for (p, q, x) in cases
+        res = _rib_value_and_partials(x, p, q)
+        res_deep = _rib_value_and_partials(x, p, q; maxiter = 4000)
+        @test all(isfinite, res)
+        @test all(isapprox.(res, res_deep; rtol = 1e-11, atol = 1e-13))
+    end
+end
+
+@testitem "_rib_value_and_partials rescale guards Float32" tags=[
+    :ad, :forwarddiff] begin
+    # The rescale threshold is `sqrt(floatmax(T))`, not a Float64
+    # literal: Float32 accumulators overflow at ~3.4e38, which a fixed
+    # 1e100 trigger could never see, reproducing #42's NaN untouched.
+    using EpiAwareADTools: _rib_value_and_partials
+
+    p, q, x = 1.0f5, 0.01f0, 0.999999f0
+    res32 = _rib_value_and_partials(x, p, q)
+    @test all(isfinite, res32)
+    res64 = _rib_value_and_partials(Float64(x), Float64(p), Float64(q))
+    @test all(isapprox.(res32, res64; rtol = 1e-3, atol = 1e-6))
+end
+
 @testitem "_beta_cdf_value_and_partials vs Distributions.jl (disparate)" tags=[
     :ad, :forwarddiff] begin
     # Property check (issue #42): the AD-traced primal comes from
@@ -108,6 +142,10 @@ end
         Ω, dα, dβ, dx = _beta_cdf_value_and_partials(α, β, x)
         Ω_ref, d_at_β, d_at_α, dx_ref = _beta_cdf_value_and_partials(
             β, α, 1 - x)
+        # These 1e-12 tolerances sit one order above the continued
+        # fraction's 1e-13 exit tolerances (`_rib_value_and_partials`),
+        # which both calls reach independently — tighten those first if
+        # ever tightening these.
         @test isapprox(Ω, 1 - Ω_ref; atol = 1e-12, rtol = 1e-12)
         @test isapprox(dα, -d_at_α; atol = 1e-12, rtol = 1e-12)
         @test isapprox(dβ, -d_at_β; atol = 1e-12, rtol = 1e-12)
