@@ -139,3 +139,121 @@ end
     @test Ω_neg == 0.0
     @test pb_neg(1.0) == (NoTangent(), 0.0, 0.0, 0.0)
 end
+
+# AD coverage for `_gamma_logccdf`, the log-space survival companion to
+# `_gamma_cdf` (EpiAwareADTools#47). Mirrors the `_gamma_cdf` items above at
+# implementation tolerance, plus a tail-specific regression pinning the
+# partials' underflow floor that `_gamma_cdf` has no analogue of.
+
+@testitem "_gamma_logccdf matches FiniteDifferences away from the tail" tags=[
+    :ad, :forwarddiff] begin
+    # `_gamma_logccdf_value_and_partials` reuses `_gamma_cdf`'s shape/scale
+    # partials, so this pins that the log-space survival's OWN gradient (not
+    # just its value) is correct where the naive `log1p(-F)` formula it
+    # replaces used to hold up, following the same finite-difference
+    # discipline as `_grad_p_a_series matches FiniteDifferences`.
+    using FiniteDifferences: central_fdm
+    using DifferentiationInterface: AutoFiniteDifferences, gradient
+    using ForwardDiff: ForwardDiff
+    using EpiAwareADTools: _gamma_logccdf
+
+    fd = AutoFiniteDifferences(; fdm = central_fdm(5, 1))
+    cases = [(2.3, 1.7, 1.9), (0.5, 2.0, 0.3), (5.0, 0.4, 1.0)]
+    for (k, θ, x) in cases
+        f(v) = _gamma_logccdf(v[1], v[2], v[3])
+        truth = gradient(f, fd, [k, θ, x])
+        got = ForwardDiff.gradient(f, [k, θ, x])
+        @test isapprox(got, truth; atol = 1e-6, rtol = 1e-6)
+    end
+end
+
+@testitem "_gamma_logccdf passes Mooncake.TestUtils.test_rule" tags=[
+    :ad, :mooncake, :mooncake_reverse] begin
+    # Mirrors `_gamma_cdf passes Mooncake.TestUtils.test_rule` for the
+    # log-space survival rule.
+    using Random: MersenneTwister
+    using Mooncake: Mooncake
+    using EpiAwareADTools: _gamma_logccdf
+
+    cases = [
+        (2.3, 1.7, 1.9),
+        (0.5, 2.0, 0.3),
+        (5.0, 0.4, 1.0),
+        (10.0, 1.0, 9.5),
+        (0.3, 1.0, 0.5)
+    ]
+    for mode in (Mooncake.ReverseMode, Mooncake.ForwardMode),
+        (k, θ, x) in cases
+
+        Mooncake.TestUtils.test_rule(
+            MersenneTwister(20260711),
+            _gamma_logccdf, k, θ, x;
+            is_primitive = true,
+            perf_flag = :none,
+            mode = mode
+        )
+    end
+end
+
+@testitem "Enzyme direct rule on _gamma_logccdf" tags=[
+    :ad, :enzyme, :enzyme_reverse] begin
+    # Mirrors `Enzyme direct rule on _gamma_cdf` for the log-space survival
+    # rule.
+    using ADTypes: AutoEnzyme, AutoForwardDiff
+    using DifferentiationInterface: gradient
+    using Enzyme: Enzyme
+    using ForwardDiff: ForwardDiff
+    using EpiAwareADTools: _gamma_logccdf
+
+    f(v) = _gamma_logccdf(v[1], v[2], v[3])
+    cases = [
+        [2.3, 1.7, 1.9],
+        [0.5, 2.0, 0.3],
+        [5.0, 0.4, 1.0],
+        [10.0, 1.0, 9.5]
+    ]
+    for input in cases
+        ref = gradient(f, AutoForwardDiff(), input)
+        g_rev = gradient(f, AutoEnzyme(mode = Enzyme.Reverse), input)
+        g_fwd = gradient(f, AutoEnzyme(mode = Enzyme.Forward), input)
+        @test isapprox(g_rev, ref; rtol = 1e-10, atol = 1e-12)
+        @test isapprox(g_fwd, ref; rtol = 1e-10, atol = 1e-12)
+    end
+end
+
+@testitem "_gamma_logccdf_value_and_partials floors gradients past underflow" tags=[
+    :ad, :forwarddiff] begin
+    # EpiAwareADTools#47: once `Q` itself underflows to a literal `0` in the
+    # working float type, dividing the `_gamma_cdf` partials by it would give
+    # `Inf`/`NaN`. Pin that the partials floor to `0` there instead, while the
+    # primal — unlike the naive `log1p(-F)` this replaces — stays finite.
+    using EpiAwareADTools: _gamma_logccdf_value_and_partials
+
+    Ω, dk, dθ, dx = _gamma_logccdf_value_and_partials(2.0, 1.0, 1000.0)
+    @test isfinite(Ω)
+    @test Ω ≈ -993.0912452206848
+    @test (dk, dθ, dx) == (0.0, 0.0, 0.0)
+
+    # A point where `Q` still underflows the naive `log1p(-F)` formula (this
+    # was `-Inf` on `main`) but stays representable directly gets a genuine,
+    # non-floored, finite gradient instead.
+    Ω2, dk2, dθ2, dx2 = _gamma_logccdf_value_and_partials(2.0, 1.0, 40.0)
+    @test isfinite(Ω2)
+    @test all(isfinite, (dk2, dθ2, dx2))
+    @test !(dk2 == 0.0 && dθ2 == 0.0 && dx2 == 0.0)
+end
+
+@testitem "_gamma_logccdf rrule zero-input guards" tags=[:ad, :forwarddiff] begin
+    # Mirrors `_gamma_cdf rrule zero-input guards` for the log-space survival
+    # rule.
+    using ChainRulesCore: rrule, NoTangent
+    using EpiAwareADTools: _gamma_logccdf
+
+    Ω, pb = rrule(_gamma_logccdf, 2.0, 1.5, 0.0)
+    @test Ω == 0.0
+    @test pb(1.0) == (NoTangent(), 0.0, 0.0, 0.0)
+
+    Ω_neg, pb_neg = rrule(_gamma_logccdf, 2.0, 1.5, -0.5)
+    @test Ω_neg == 0.0
+    @test pb_neg(1.0) == (NoTangent(), 0.0, 0.0, 0.0)
+end
