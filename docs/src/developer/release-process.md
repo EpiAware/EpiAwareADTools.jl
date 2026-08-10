@@ -87,7 +87,6 @@ See [EpiAwarePackageTools](https://github.com/EpiAware/EpiAwarePackageTools.jl) 
 ## Release notes
 
 - **GitHub Releases**: created by TagBot for every release, with a generated changelog linking commits and pull requests
-- **NEWS.md**: reserved for major releases and significant milestones, giving context for breaking changes and migration guidance
 
 ## Pre-release checklist
 
@@ -100,7 +99,6 @@ Before triggering registration:
 
 For a major release, additionally:
 
-- [ ] NEWS.md entry describing the breaking changes and migration path
 - [ ] Deprecation warnings added in a previous release where applicable
 - [ ] Downstream package compatibility assessed (ConvolvedDistributions.jl and CensoredDistributions.jl consume the AD-safe surface)
 
