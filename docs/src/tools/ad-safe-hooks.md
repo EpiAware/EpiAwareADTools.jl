@@ -92,7 +92,9 @@ from elementary operations and differentiate through the generic fallback.
 !!! note "Far right tail"
     `logccdf_ad_safe` on a `Gamma` (and so, transitively, on a `GeneralizedGamma`) routes through `_gamma_logccdf` (see the [Gamma-CDF derivative](@ref gamma-cdf) page), which reads the survival directly from `SpecialFunctions.gamma_inc` rather than reconstructing it as `1 - F`.
     Its *value* therefore tracks the stock `logccdf` at implementation tolerance across the whole domain, including deep into the right tail where `F` itself has already rounded to `1` (EpiAwareADTools#47).
-    The *gradient* floors to `0` only once the survival itself underflows below the smallest representable positive float (around `logccdf ≈ -708`), a regime no realistic right-censored observation reaches.
+    The *gradient* stays finite and accurate to arbitrary tail depth as well.
+    The `x` and `θ` partials reduce to the hazard-type ratio `f/Q` and are formed in log space as `exp(logpdf - logccdf)`, which never underflows.
+    The shape partial divides the exact series by `gamma_inc`'s accurately-computed survival while that is at least `1e-8`, and switches to a corrected asymptotic series beyond, holding a relative error of about `1e-6` or better at every depth.
 
 ## Upstream target
 
