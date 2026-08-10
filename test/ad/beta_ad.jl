@@ -38,7 +38,7 @@
     end
 end
 
-@testitem "_rib_value_and_partials disparate-shape regression (issue #42)" tags=[
+@testitem "_rib_value_and_partials disparate-shape regression (#42)" tags=[
     :ad, :forwarddiff] begin
     # Boundary-adjacent, wildly disparate p/q regime a plausible
     # Student-t/LogLogistic/Beta `crps` call site can land in (see issue
@@ -68,7 +68,7 @@ end
     end
 end
 
-@testitem "_beta_cdf_value_and_partials matches Distributions.jl across disparate shapes" tags=[
+@testitem "_beta_cdf_value_and_partials vs Distributions.jl (disparate)" tags=[
     :ad, :forwarddiff] begin
     # Property check (issue #42): the AD-traced primal comes from
     # `_beta_cdf_value_and_partials`'s continued fraction, not directly
