@@ -1,16 +1,15 @@
 # MANAGED by EpiAwarePackageTools.scaffold — do not edit by hand.
 name: Downstream
 
-# Opt-in reverse-dependency tests: checks that this PR's version of the package
-# does not break packages that depend on it. This is expensive, so it does not
-# run on every push. Trigger it by adding the `downstream` (or `reverse-deps`)
-# label to a PR, or by running it manually from the Actions tab.
+# Opt-in reverse-dependency tests: checks that this PR's version of the
+# package does not break packages that depend on it. Expensive, so it
+# doesn't run on every push. Trigger via the `downstream` (or `reverse-deps`)
+# PR label, or manually from the Actions tab.
 #
-# The downstream list below starts empty. Add entries as packages start
-# depending on this one (see the commented example), then label a PR to run
-# them. This list is package-owned: edit `downstreams` to fit the package and
-# `scaffold_update` keeps what you set, while the rest of this file stays
-# managed.
+# `downstreams` below starts empty; add entries as packages start depending
+# on this one (see the commented example) and label a PR to run them. This
+# list is package-owned — `update` preserves it while the rest of the file
+# stays managed.
 
 on:
   pull_request:
@@ -28,17 +27,11 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       github.event.label.name == 'downstream' ||
       github.event.label.name == 'reverse-deps'
-    uses: EpiAware/.github/.github/workflows/downstream.yml@main
+    uses: EpiAware/.github/.github/workflows/downstream.yml@d024dc6927cc3523292a159dc0d4a45193c9c65d
     secrets: inherit  # pragma: allowlist secret
     with:
       # JSON list of downstreams. Each entry needs `repo` (owner/name) and may
       # set `group` (GROUP env for the downstream suite) and `allow_fail` (true
       # keeps a failure from reding the run). Empty by default; e.g.:
       #   [{"repo":"EpiAware/SomeDownstream.jl","group":"All"}]
-      # ComposedDistributions and DistributionsInference take their
-      # `xlogy`/`xlog1py` Mooncake rules from this package, so a change that
-      # narrows that extension is a silent wrong-gradient for both.
       downstreams: >-
-        [{"repo":"EpiAware/ConvolvedDistributions.jl"},
-        {"repo":"EpiAware/ComposedDistributions.jl"},
-        {"repo":"EpiAware/DistributionsInference.jl"}]
