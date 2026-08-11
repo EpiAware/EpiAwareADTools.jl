@@ -8,3 +8,6 @@
 # to use this file once, locally:
 #   git config blame.ignoreRevsFile .git-blame-ignore-revs
 # managed:end
+
+# style: reformat the package-owned source with Runic
+164c5118bb8a5972563cb7eb4bb1b56fe5b2bd49
