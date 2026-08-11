@@ -38,6 +38,103 @@
     end
 end
 
+@testitem "_rib_value_and_partials disparate-shape regression (#42)" tags=[
+    :ad, :forwarddiff] begin
+    # Boundary-adjacent, wildly disparate p/q regime a plausible
+    # Student-t/LogLogistic/Beta `crps` call site can land in (see issue
+    # #42): before the continued fraction's A_n/B_n accumulators were
+    # rescaled, these overflowed to Inf around n~100, and the final
+    # `A * dB_p / B^2` combination produced NaN for both shape partials.
+    # Values from a direct check against `SpecialFunctions.beta_inc` and a
+    # manual finite-difference ground truth (issue #42's own repro table).
+    using SpecialFunctions: beta_inc
+    using EpiAwareADTools: _rib_value_and_partials
+
+    cases = [
+        (1e5, 0.01, 0.999999),
+        (1e6, 0.001, 0.9999999),
+        (1e7, 0.0001, 0.99999999),
+        (1e3, 0.001, 0.9999),
+        (50.0, 0.02, 0.999)
+    ]
+    for (p, q, x) in cases
+        Ω, dp, dq = _rib_value_and_partials(x, p, q)
+        @test isfinite(Ω)
+        @test isfinite(dp)
+        @test isfinite(dq)
+
+        true_Ω = first(beta_inc(p, q, x))
+        @test isapprox(Ω, true_Ω; rtol = 1e-8)
+    end
+end
+
+@testitem "_rib_value_and_partials converges well under maxiter" tags=[
+    :ad, :forwarddiff] begin
+    # Hitting `maxiter` returns the last iterate with only a `@debug`
+    # trace, so pin that the default ceiling has a wide margin: raising
+    # `maxiter` well past it must not change the answer, even one step
+    # more disparate than the harshest #42 grid point.
+    using EpiAwareADTools: _rib_value_and_partials
+
+    cases = [
+        (1e7, 0.0001, 0.99999999),
+        (1e8, 1e-5, 0.999999999)
+    ]
+    for (p, q, x) in cases
+        res = _rib_value_and_partials(x, p, q)
+        res_deep = _rib_value_and_partials(x, p, q; maxiter = 4000)
+        @test all(isfinite, res)
+        @test all(isapprox.(res, res_deep; rtol = 1e-11, atol = 1e-13))
+        # Convergence within half the default ceiling pins an actual
+        # factor-of-two margin, not merely that the ceiling was not hit:
+        # this line is the erosion signal if a future change slows the
+        # fraction down.
+        res_half = _rib_value_and_partials(x, p, q; maxiter = 500)
+        @test all(isapprox.(res_half, res_deep; rtol = 1e-11, atol = 1e-13))
+    end
+end
+
+@testitem "_rib_value_and_partials rescale guards Float32" tags=[
+    :ad, :forwarddiff] begin
+    # The rescale threshold is `sqrt(floatmax(T))`, not a Float64
+    # literal: Float32 accumulators overflow at ~3.4e38, which a fixed
+    # 1e100 trigger could never see, reproducing #42's NaN untouched.
+    using EpiAwareADTools: _rib_value_and_partials
+
+    p, q, x = 1.0f5, 0.01f0, 0.999999f0
+    res32 = _rib_value_and_partials(x, p, q)
+    @test all(isfinite, res32)
+    res64 = _rib_value_and_partials(Float64(x), Float64(p), Float64(q))
+    @test all(isapprox.(res32, res64; rtol = 1e-3, atol = 1e-6))
+end
+
+@testitem "_beta_cdf_value_and_partials vs Distributions.jl (disparate)" tags=[
+    :ad, :forwarddiff] begin
+    # Property check (issue #42): the AD-traced primal comes from
+    # `_beta_cdf_value_and_partials`'s continued fraction, not directly
+    # from `SpecialFunctions.beta_inc` (see `_beta_cdf` vs. the ChainRules
+    # extension's `rrule`/`frule`), so it must independently agree with
+    # Distributions.jl's own `Beta` CDF/PDF — not merely avoid NaN — across
+    # a spread of shape-ratio magnitudes and boundary-adjacent `x`,
+    # covering both the direct and reflected continued-fraction branches.
+    using Distributions: Beta, cdf, pdf
+    using EpiAwareADTools: _beta_cdf_value_and_partials
+
+    grid = [
+        (1e5, 0.01, 0.999999), (1e6, 0.001, 0.9999999),
+        (1e7, 0.0001, 0.99999999), (1e3, 0.001, 0.9999),
+        (50.0, 0.02, 0.999), (0.01, 1e5, 0.000001),
+        (0.001, 1e6, 1e-7), (1e4, 1e-3, 0.9995),
+        (2.0, 1e5, 0.00005), (1e5, 2.0, 0.99998)
+    ]
+    for (α, β, x) in grid
+        Ω, dα, dβ, dx = _beta_cdf_value_and_partials(α, β, x)
+        @test all(isfinite, (Ω, dα, dβ, dx))
+        @test isapprox(Ω, cdf(Beta(α, β), x); rtol = 1e-9)
+        @test isapprox(dx, pdf(Beta(α, β), x); rtol = 1e-9)
+    end
+end
+
 @testitem "_beta_cdf_value_and_partials reflection symmetry matches direct computation" tags=[
     :ad, :forwarddiff] begin
     using EpiAwareADTools: _beta_cdf_value_and_partials
@@ -51,6 +148,10 @@ end
         Ω, dα, dβ, dx = _beta_cdf_value_and_partials(α, β, x)
         Ω_ref, d_at_β, d_at_α, dx_ref = _beta_cdf_value_and_partials(
             β, α, 1 - x)
+        # These 1e-12 tolerances sit one order above the continued
+        # fraction's 1e-13 exit tolerances (`_rib_value_and_partials`),
+        # which both calls reach independently — tighten those first if
+        # ever tightening these.
         @test isapprox(Ω, 1 - Ω_ref; atol = 1e-12, rtol = 1e-12)
         @test isapprox(dα, -d_at_α; atol = 1e-12, rtol = 1e-12)
         @test isapprox(dβ, -d_at_β; atol = 1e-12, rtol = 1e-12)

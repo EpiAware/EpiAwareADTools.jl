@@ -18,6 +18,21 @@
     end
 end
 
+@testitem "logccdf_ad_safe preserves the Gamma far right tail" begin
+    using EpiAwareADTools
+    using Distributions: Gamma, logccdf
+
+    # EpiAwareADTools#47: `log1p(-F)` underflows to `-Inf` once `F` rounds to
+    # `1` in Float64, far short of where the stock evaluator (which computes
+    # the survival directly rather than as `1 - F`) stays finite. Values
+    # mirror the issue's own measurements on `main`, where `x = 45` had
+    # already gone to `-Inf` and `x = 40` was 0.7% out.
+    d = Gamma(2.0, 1.0)
+    for x in (0.4, 1.0, 3.2, 8.0, 20.0, 30.0, 40.0, 45.0, 100.0, 1000.0)
+        @test logccdf_ad_safe(d, x)≈logccdf(d, x) rtol=1e-9
+    end
+end
+
 @testitem "hooks agree with Distributions on Beta" begin
     using EpiAwareADTools
     using Distributions: Beta, cdf, logcdf, ccdf, logccdf, pdf
