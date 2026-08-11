@@ -61,6 +61,10 @@ function backends()
             backend = AutoReverseDiff(compile = false),
         ),
         (
+            name = "ReverseDiff (compiled)",
+            backend = AutoReverseDiff(compile = true),
+        ),
+        (
             name = "Mooncake reverse",
             backend = AutoMooncake(config = nothing),
         ),
