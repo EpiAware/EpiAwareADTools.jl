@@ -29,7 +29,9 @@ EpiAwareADToolsSurvivalDistributionsExt = "SurvivalDistributions"
 
 [compat]
 ChainRulesCore = "1"
-Distributions = "0.25"
+# Floored at 0.25.92: the first release whose `Truncated` stores `nothing`
+# for an absent bound, which `primal_distribution` round-trips through.
+Distributions = "0.25.92"
 DocStringExtensions = "0.9"
 Enzyme = "0.13"
 ForwardDiff = "0.10, 1"

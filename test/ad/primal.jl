@@ -37,6 +37,23 @@ end
     @test params(p) === (2.0, 1.5)
 end
 
+@testitem "primal_distribution strips Dual params from a Truncated" tags=[
+    :ad, :forwarddiff] begin
+    using ForwardDiff: Dual
+    using Distributions: Normal, Exponential, Truncated, truncated, params
+    using EpiAwareADTools: primal_distribution
+
+    d = truncated(Exponential(Dual{:t}(1.5, 1.0)), 0.5, 10.0)
+    p = primal_distribution(d)
+    @test p isa Truncated{Exponential{Float64}}
+    @test params(p) === (1.5, 0.5, 10.0)
+
+    # One-sided: the `nothing` bound survives the strip.
+    o = truncated(Normal(Dual{:t}(2.0, 1.0), Dual{:t}(1.5, 0.0)); lower = 0.5)
+    @test primal_distribution(o) isa Truncated{Normal{Float64}}
+    @test primal_distribution(o).upper === nothing
+end
+
 @testitem "primal carries no gradient (ForwardDiff)" tags=[
     :ad, :forwarddiff] begin
     using ADTypes: AutoForwardDiff

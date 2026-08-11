@@ -19,7 +19,10 @@ composite distribution returns from `params`, which is what lets
 [`primal_distribution`](@ref), and any caller mapping `primal` over `params(d)`,
 handle a component whose parameter is itself a tuple. `AbstractArray` covers a
 vector-valued hyperparameter such as a grid of integration nodes, and returns a
-new container rather than stripping in place.
+new container rather than stripping in place. `Nothing` passes through
+unchanged, so a wrapper distribution's absent bound — the `nothing` a
+one-sided `truncated`/`censored` stores — strips alongside its numeric
+siblings.
 
 This is the sanctioned replacement for the underscore-prefixed `_primal` that
 ConvolvedDistributions.jl and CensoredDistributions.jl each carry internally;
@@ -42,6 +45,8 @@ primal(t::Tuple) = map(primal, t)
 
 primal(a::AbstractArray) = map(primal, a)
 
+primal(::Nothing) = nothing
+
 @doc """
 Rebuild a distribution with its parameters stripped to their primal values via
 the type's positional constructor.
@@ -56,6 +61,15 @@ downstream package evaluate a non-differentiable quantity (such as a
 quadrature-window quantile) on an integration component without live `Dual` or
 `TrackedReal` parameters flowing into it.
 
+A wrapper distribution whose `params` flattens its inner distribution's
+parameters and appends its own — `Truncated` and `Censored` — cannot
+round-trip through the positional constructor, so each has its own method
+rebuilding the inner distribution recursively and re-applying the primal
+bounds through the public `truncated`/`censored`. Any other distribution
+whose `params` does not match its constructor raises an `ArgumentError`
+naming the type rather than a `MethodError` naming a constructor the caller
+never wrote.
+
 # Arguments
 - `d`: the univariate distribution to rebuild from primal parameters.
 
@@ -64,9 +78,33 @@ quadrature-window quantile) on an integration component without live `Dual` or
 using EpiAwareADTools, Distributions
 
 primal_distribution(Gamma(2.0, 1.0))
+primal_distribution(truncated(Gamma(2.0, 1.0), 0.0, 10.0))
 ```
 """
 function primal_distribution(d::UnivariateDistribution)
     D = Base.typename(typeof(d)).wrapper
-    return D(map(primal, params(d))...)
+    p = map(primal, params(d))
+    hasmethod(D, typeof(p)) || _unreconstructable(d, D)
+    return D(p...)
+end
+
+# `params(::Truncated)` has no matching constructor (#57, #58); rebuild
+# through the public `truncated` instead.
+function primal_distribution(d::Truncated)
+    return truncated(primal_distribution(d.untruncated);
+        lower = primal(d.lower), upper = primal(d.upper))
+end
+
+# `params(::Censored)` has the same shape and the same defect.
+function primal_distribution(d::Distributions.Censored)
+    return censored(primal_distribution(d.uncensored);
+        lower = primal(d.lower), upper = primal(d.upper))
+end
+
+# Out of line so the rebuild path stays a plain dispatch.
+@noinline function _unreconstructable(d, D)
+    throw(ArgumentError(
+        "primal_distribution cannot rebuild a $(typeof(d)): its `params` " *
+        "do not match a `$(D)` constructor. Define a `primal_distribution` " *
+        "method for this type."))
 end
