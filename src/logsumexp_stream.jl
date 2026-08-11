@@ -101,13 +101,21 @@ result.value ≈ log(1 / (1 - exp(-1)))
 result.converged
 ```
 """
-function logsumexp_stream(log_term; atol::Real = 1e-12,
+function logsumexp_stream(
+        log_term; atol::Real = 1.0e-12,
         min_stable_terms::Integer = 8, max_terms::Integer = 10_000,
-        strict::Bool = true)
-    min_stable_terms >= 1 || throw(ArgumentError(
-        "min_stable_terms must be >= 1, got $min_stable_terms"))
-    max_terms >= 1 || throw(ArgumentError(
-        "max_terms must be >= 1, got $max_terms"))
+        strict::Bool = true
+    )
+    min_stable_terms >= 1 || throw(
+        ArgumentError(
+            "min_stable_terms must be >= 1, got $min_stable_terms"
+        )
+    )
+    max_terms >= 1 || throw(
+        ArgumentError(
+            "max_terms must be >= 1, got $max_terms"
+        )
+    )
 
     m = log_term(0)
     s = one(m)
@@ -141,13 +149,15 @@ function logsumexp_stream(log_term; atol::Real = 1e-12,
     end
 
     if !converged && strict
-        error("logsumexp_stream did not stabilise within $max_terms " *
-              "term(s): the running total never left $min_stable_terms " *
-              "consecutive term(s) unchanged within atol = $atol. The " *
-              "partial log-sum-exp at that point was $value. Increase " *
-              "max_terms, loosen atol/min_stable_terms, or pass " *
-              "strict = false to receive this partial result with " *
-              "converged = false instead of an error.")
+        error(
+            "logsumexp_stream did not stabilise within $max_terms " *
+                "term(s): the running total never left $min_stable_terms " *
+                "consecutive term(s) unchanged within atol = $atol. The " *
+                "partial log-sum-exp at that point was $value. Increase " *
+                "max_terms, loosen atol/min_stable_terms, or pass " *
+                "strict = false to receive this partial result with " *
+                "converged = false instead of an error."
+        )
     end
 
     return (value = value, terms_used = terms_used, converged = converged)

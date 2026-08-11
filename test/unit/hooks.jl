@@ -29,7 +29,7 @@ end
     # already gone to `-Inf` and `x = 40` was 0.7% out.
     d = Gamma(2.0, 1.0)
     for x in (0.4, 1.0, 3.2, 8.0, 20.0, 30.0, 40.0, 45.0, 100.0, 1000.0)
-        @test logccdf_ad_safe(d, x)≈logccdf(d, x) rtol=1e-9
+        @test logccdf_ad_safe(d, x) ≈ logccdf(d, x) rtol = 1.0e-9
     end
 end
 
@@ -122,8 +122,10 @@ end
     using EpiAwareADTools: primal_distribution
     using Distributions: Gamma, Beta, Normal, LogNormal, params
 
-    for d in (Gamma(2.0, 1.5), Beta(2.0, 1.5), Normal(-0.5, 0.8),
-        LogNormal(0.2, 0.3))
+    for d in (
+            Gamma(2.0, 1.5), Beta(2.0, 1.5), Normal(-0.5, 0.8),
+            LogNormal(0.2, 0.3),
+        )
         p = primal_distribution(d)
         @test p == d
         @test params(p) == params(d)

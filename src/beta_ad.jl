@@ -43,7 +43,7 @@ end
     n == 1 && return p * f * (q - 1) / (q * (p + 1))
     F1 = p^2 * f^2 * (n - 1) / q^2
     F2 = (p + q + n - 2) * (p + n - 1) * (q - n) /
-         ((p + 2n - 3) * (p + 2n - 2)^2 * (p + 2n - 1))
+        ((p + 2n - 3) * (p + 2n - 2)^2 * (p + 2n - 1))
     return F1 * F2
 end
 
@@ -81,7 +81,7 @@ end
 @inline function _rib_db_dp(x::Real, p::Real, q::Real, n::Integer)
     f = _rib_f(x, p, q)
     N1 = (p * f / q) *
-         ((-4p - 4q + 4) * n^2 + (4p - 4 + 4q - 2p^2) * n + p^2 * q)
+        ((-4p - 4q + 4) * n^2 + (4p - 4 + 4q - 2p^2) * n + p^2 * q)
     D = (p + 2n - 2)^2 * (p + 2n)^2
     return N1 / D
 end
@@ -121,8 +121,10 @@ end
 # exactly unchanged; only the (irrelevant) common scale is discarded. This
 # is the standard renormalisation modified-Lentz-style continued-fraction
 # evaluators use to stay within floating-point range.
-function _rib_value_and_partials(x::Real, p::Real, q::Real;
-        rtol::Real = 1e-13, atol::Real = 1e-13, maxiter::Int = 1000)
+function _rib_value_and_partials(
+        x::Real, p::Real, q::Real;
+        rtol::Real = 1.0e-13, atol::Real = 1.0e-13, maxiter::Int = 1000
+    )
     T = float(promote_type(typeof(x), typeof(p), typeof(q)))
     rescale_threshold = sqrt(floatmax(T))
     # Exit tolerances floor at 100·eps(T): the Float64 defaults pass
@@ -203,8 +205,8 @@ function _rib_value_and_partials(x::Real, p::Real, q::Real;
         G_p_new = dA_p / B - r_A_new * dB_p / B
         G_q_new = dA_q / B - r_A_new * dB_q / B
         converged = isapprox(r_A_new, r_A; rtol = rtolT, atol = atolT) &&
-                    isapprox(G_p_new, G_p; rtol = rtolT, atol = atolT) &&
-                    isapprox(G_q_new, G_q; rtol = rtolT, atol = atolT)
+            isapprox(G_p_new, G_p; rtol = rtolT, atol = atolT) &&
+            isapprox(G_q_new, G_q; rtol = rtolT, atol = atolT)
         r_A, G_p, G_q = r_A_new, G_p_new, G_q_new
         converged && break
     end
@@ -217,9 +219,9 @@ function _rib_value_and_partials(x::Real, p::Real, q::Real;
     logK = p * log(x) + (q - 1) * log1p(-x) - log(p) - logbeta(p, q)
     K = exp(logK)
     F1_p = A / B * (log(x) - 1 / p + digamma(p + q) - digamma(p)) +
-           dA_p / B - A * dB_p / B^2
+        dA_p / B - A * dB_p / B^2
     F1_q = A / B * (log1p(-x) + digamma(p + q) - digamma(q)) +
-           dA_q / B - A * dB_q / B^2
+        dA_q / B - A * dB_q / B^2
     return K * A / B, K * F1_p, K * F1_q
 end
 

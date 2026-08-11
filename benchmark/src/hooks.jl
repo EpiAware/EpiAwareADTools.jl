@@ -16,28 +16,38 @@ let
     g = Gamma(2.0, 1.0)
     SUITE["Hooks"]["Gamma"] = BenchmarkGroup()
     SUITE["Hooks"]["Gamma"]["cdf_ad_safe"] = @benchmarkable cdf_ad_safe.(
-        $g, $TEST_XS)
+        $g, $TEST_XS
+    )
     SUITE["Hooks"]["Gamma"]["logcdf_ad_safe"] = @benchmarkable logcdf_ad_safe.(
-        $g, $TEST_XS)
+        $g, $TEST_XS
+    )
     SUITE["Hooks"]["Gamma"]["ccdf_ad_safe"] = @benchmarkable ccdf_ad_safe.(
-        $g, $TEST_XS)
+        $g, $TEST_XS
+    )
     SUITE["Hooks"]["Gamma"]["logccdf_ad_safe"] = @benchmarkable logccdf_ad_safe.(
-        $g, $TEST_XS)
+        $g, $TEST_XS
+    )
     SUITE["Hooks"]["Gamma"]["pdf_ad_safe"] = @benchmarkable pdf_ad_safe.(
-        $g, $TEST_XS)
+        $g, $TEST_XS
+    )
 
     b = Beta(2.0, 1.0)
     SUITE["Hooks"]["Beta"] = BenchmarkGroup()
     SUITE["Hooks"]["Beta"]["cdf_ad_safe"] = @benchmarkable cdf_ad_safe.(
-        $b, $TEST_XS_BETA)
+        $b, $TEST_XS_BETA
+    )
     SUITE["Hooks"]["Beta"]["logcdf_ad_safe"] = @benchmarkable logcdf_ad_safe.(
-        $b, $TEST_XS_BETA)
+        $b, $TEST_XS_BETA
+    )
     SUITE["Hooks"]["Beta"]["ccdf_ad_safe"] = @benchmarkable ccdf_ad_safe.(
-        $b, $TEST_XS_BETA)
+        $b, $TEST_XS_BETA
+    )
     SUITE["Hooks"]["Beta"]["logccdf_ad_safe"] = @benchmarkable logccdf_ad_safe.(
-        $b, $TEST_XS_BETA)
+        $b, $TEST_XS_BETA
+    )
     SUITE["Hooks"]["Beta"]["pdf_ad_safe"] = @benchmarkable pdf_ad_safe.(
-        $b, $TEST_XS_BETA)
+        $b, $TEST_XS_BETA
+    )
 
     # Generic fall-through: a Normal has no bespoke method, so each hook
     # collapses to the stock Distributions function.
@@ -50,13 +60,17 @@ let
     # The internal kernels the Gamma/Beta hooks share, scalar and broadcast.
     SUITE["Hooks"]["_gamma_cdf"] = BenchmarkGroup()
     SUITE["Hooks"]["_gamma_cdf"]["scalar"] = @benchmarkable _gamma_cdf(
-        2.0, 1.0, 3.0)
+        2.0, 1.0, 3.0
+    )
     SUITE["Hooks"]["_gamma_cdf"]["broadcast"] = @benchmarkable _gamma_cdf.(
-        2.0, 1.0, $TEST_XS)
+        2.0, 1.0, $TEST_XS
+    )
 
     SUITE["Hooks"]["_beta_cdf"] = BenchmarkGroup()
     SUITE["Hooks"]["_beta_cdf"]["scalar"] = @benchmarkable _beta_cdf(
-        2.0, 1.0, 0.3)
+        2.0, 1.0, 0.3
+    )
     SUITE["Hooks"]["_beta_cdf"]["broadcast"] = @benchmarkable _beta_cdf.(
-        2.0, 1.0, $TEST_XS_BETA)
+        2.0, 1.0, $TEST_XS_BETA
+    )
 end

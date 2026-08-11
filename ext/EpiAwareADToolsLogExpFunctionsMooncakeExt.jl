@@ -29,8 +29,10 @@ using Mooncake: Mooncake
 # chalk-lab/Mooncake.jl#1241 was withdrawn as bot-filed rather than fixed: the
 # gap is still there in Mooncake 0.5.45 and the report awaits a re-file.
 Mooncake.@from_chainrules Mooncake.DefaultCtx Tuple{
-    typeof(xlogy), Base.IEEEFloat, Base.IEEEFloat}
+    typeof(xlogy), Base.IEEEFloat, Base.IEEEFloat,
+}
 Mooncake.@from_chainrules Mooncake.DefaultCtx Tuple{
-    typeof(xlog1py), Base.IEEEFloat, Base.IEEEFloat}
+    typeof(xlog1py), Base.IEEEFloat, Base.IEEEFloat,
+}
 
 end

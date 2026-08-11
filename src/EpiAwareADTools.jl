@@ -52,15 +52,15 @@ module EpiAwareADTools
 # using/import live in this file (kit #105); the extensions import the
 # package's own internals from here.
 using Distributions: Distributions, UnivariateDistribution, Gamma, Beta,
-                     Truncated, params, shape, scale, pdf, logpdf, cdf,
-                     logcdf, ccdf, logccdf, truncated, censored
+    Truncated, params, shape, scale, pdf, logpdf, cdf,
+    logcdf, ccdf, logccdf, truncated, censored
 
 using SpecialFunctions: gamma_inc, loggamma, digamma, beta_inc, logbeta
 
 # DocStringExtensions symbols for the @template conventions registered by
 # src/docstrings.jl.
 using DocStringExtensions: @template, DOCSTRING, EXPORTS, IMPORTS, TYPEDEF,
-                           TYPEDFIELDS, TYPEDSIGNATURES
+    TYPEDFIELDS, TYPEDSIGNATURES
 
 # Register the standard EpiAware docstring conventions before any docstrings
 # are defined (see src/docstrings.jl).

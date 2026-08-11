@@ -4,7 +4,7 @@
 # pin the per-backend strip methods and non-differentiability marks the
 # extensions install.
 
-@testitem "primal strips a ForwardDiff Dual" tags=[:ad, :forwarddiff] begin
+@testitem "primal strips a ForwardDiff Dual" tags = [:ad, :forwarddiff] begin
     using ForwardDiff: ForwardDiff, Dual
     using EpiAwareADTools: primal
 
@@ -15,8 +15,9 @@
     @test primal(d2) === 2.5
 end
 
-@testitem "primal strips a ReverseDiff TrackedReal" tags=[
-    :ad, :reversediff] begin
+@testitem "primal strips a ReverseDiff TrackedReal" tags = [
+    :ad, :reversediff,
+] begin
     using ReverseDiff: ReverseDiff, TrackedReal
     using EpiAwareADTools: primal
 
@@ -25,8 +26,9 @@ end
     @test primal(t) === 4.2
 end
 
-@testitem "primal_distribution strips Dual params" tags=[
-    :ad, :forwarddiff] begin
+@testitem "primal_distribution strips Dual params" tags = [
+    :ad, :forwarddiff,
+] begin
     using ForwardDiff: Dual
     using Distributions: Gamma, params
     using EpiAwareADTools: primal_distribution
@@ -37,8 +39,9 @@ end
     @test params(p) === (2.0, 1.5)
 end
 
-@testitem "primal_distribution strips Dual params from a Truncated" tags=[
-    :ad, :forwarddiff] begin
+@testitem "primal_distribution strips Dual params from a Truncated" tags = [
+    :ad, :forwarddiff,
+] begin
     using ForwardDiff: Dual
     using Distributions: Normal, Exponential, Truncated, truncated, params
     using EpiAwareADTools: primal_distribution
@@ -54,8 +57,9 @@ end
     @test primal_distribution(o).upper === nothing
 end
 
-@testitem "primal carries no gradient (ForwardDiff)" tags=[
-    :ad, :forwarddiff] begin
+@testitem "primal carries no gradient (ForwardDiff)" tags = [
+    :ad, :forwarddiff,
+] begin
     using ADTypes: AutoForwardDiff
     using DifferentiationInterface: gradient
     using EpiAwareADTools: primal
@@ -64,8 +68,9 @@ end
     @test gradient(g, AutoForwardDiff(), [1.5]) ≈ [2.0]
 end
 
-@testitem "primal carries no gradient (ReverseDiff)" tags=[
-    :ad, :reversediff] begin
+@testitem "primal carries no gradient (ReverseDiff)" tags = [
+    :ad, :reversediff,
+] begin
     using ADTypes: AutoReverseDiff
     using DifferentiationInterface: gradient
     using EpiAwareADTools: primal
@@ -74,8 +79,9 @@ end
     @test gradient(g, AutoReverseDiff(compile = false), [1.5]) ≈ [2.0]
 end
 
-@testitem "primal carries no gradient (Mooncake)" tags=[
-    :ad, :mooncake, :mooncake_reverse] begin
+@testitem "primal carries no gradient (Mooncake)" tags = [
+    :ad, :mooncake, :mooncake_reverse,
+] begin
     using ADTypes: AutoMooncake
     using DifferentiationInterface: gradient
     # DI dispatches AutoMooncake through its Mooncake extension, so the item
@@ -87,8 +93,9 @@ end
     @test gradient(g, AutoMooncake(config = nothing), [1.5]) ≈ [2.0]
 end
 
-@testitem "primal carries no gradient (Enzyme)" tags=[
-    :ad, :enzyme, :enzyme_reverse] begin
+@testitem "primal carries no gradient (Enzyme)" tags = [
+    :ad, :enzyme, :enzyme_reverse,
+] begin
     using ADTypes: AutoEnzyme
     using DifferentiationInterface: gradient
     using Enzyme: Enzyme
@@ -97,5 +104,6 @@ end
     g(v) = 2 * v[1] + 3 * primal(v[1])
     @test gradient(
         g, AutoEnzyme(mode = Enzyme.set_runtime_activity(Enzyme.Reverse)),
-        [1.5]) ≈ [2.0]
+        [1.5]
+    ) ≈ [2.0]
 end

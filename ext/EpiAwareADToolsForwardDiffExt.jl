@@ -2,9 +2,9 @@ module EpiAwareADToolsForwardDiffExt
 
 import EpiAwareADTools: primal, _gamma_cdf, _gamma_logccdf, _beta_cdf
 using EpiAwareADTools: _gamma_cdf_value_and_partials,
-                       _gamma_logccdf_value_and_partials,
-                       _beta_cdf_value_and_partials, logcdf_ad_safe,
-                       logccdf_ad_safe
+    _gamma_logccdf_value_and_partials,
+    _beta_cdf_value_and_partials, logcdf_ad_safe,
+    logccdf_ad_safe
 using Distributions: Distributions, Gamma, Beta
 using ForwardDiff: ForwardDiff, Dual, value, partials
 
@@ -29,8 +29,8 @@ _dual_tag(::Real, rest...) = _dual_tag(rest...)
 _dual_width(x::Dual{T, V, N}, rest...) where {T, V, N} = N
 _dual_width(::Real, rest...) = _dual_width(rest...)
 function _par(x, ::Val{N}) where {N}
-    x isa Dual ? partials(x) :
-    ForwardDiff.Partials(ntuple(_ -> zero(_val(x)), N))
+    return x isa Dual ? partials(x) :
+        ForwardDiff.Partials(ntuple(_ -> zero(_val(x)), N))
 end
 
 function _dual_impl(k, θ, x)
@@ -41,7 +41,7 @@ function _dual_impl(k, θ, x)
     xv = _val(x)
     Ω, dk, dθ, dx = _gamma_cdf_value_and_partials(kv, θv, xv)
     new_partials = dk * _par(k, Val(N)) + dθ * _par(θ, Val(N)) +
-                   dx * _par(x, Val(N))
+        dx * _par(x, Val(N))
     return Dual{T}(Ω, new_partials)
 end
 
@@ -94,7 +94,7 @@ function _logccdf_dual_impl(k, θ, x)
     xv = _val(x)
     Ω, dk, dθ, dx = _gamma_logccdf_value_and_partials(kv, θv, xv)
     new_partials = dk * _par(k, Val(N)) + dθ * _par(θ, Val(N)) +
-                   dx * _par(x, Val(N))
+        dx * _par(x, Val(N))
     return Dual{T}(Ω, new_partials)
 end
 
@@ -132,7 +132,7 @@ function _beta_dual_impl(α, β, x)
     xv = _val(x)
     Ω, dα, dβ, dx = _beta_cdf_value_and_partials(αv, βv, xv)
     new_partials = dα * _par(α, Val(N)) + dβ * _par(β, Val(N)) +
-                   dx * _par(x, Val(N))
+        dx * _par(x, Val(N))
     return Dual{T}(Ω, new_partials)
 end
 
