@@ -3,10 +3,10 @@
 # standard). Add doc-only deps (e.g. plotting, DocumenterCitations) here as the
 # docs grow. The package itself is pinned by path via `[sources]`.
 # The managed `docs/make.jl` calls `using EpiAwarePackageTools` (the shared docs
-# build machinery), so the kit is a docs dep too; until it is registered it is
-# pinned by git via `[sources]` (empty for the kit itself, which is the
-# package). The AD-backends tutorial reads the package's `test/ADFixtures`
-# registry, pinned by path below, and imports the plotting/table deps it needs.
+# build machinery), so the kit is a docs dep too; it is registered, so it is
+# bounded via `[compat]` rather than pinned by git. The AD-backends tutorial
+# reads the package's `test/ADFixtures` registry, pinned by path below, and
+# imports the plotting/table deps it needs.
 [deps]
 ADFixtures = "88035cd3-dce1-471d-b78e-eb10797b6387"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
@@ -29,7 +29,6 @@ SurvivalDistributions = "7121986e-ae89-4673-ae4e-1cb822919a18"
 [sources]
 ADFixtures = {path = "../test/ADFixtures"}
 EpiAwareADTools = {path = ".."}
-EpiAwarePackageTools = {rev = "main", url = "https://github.com/EpiAware/EpiAwarePackageTools.jl"}
 
 [compat]
 DifferentiationInterfaceTest = "0.11.0"
@@ -41,6 +40,7 @@ Distributions = "0.25.92"
 Documenter = "1"
 DocumenterCitations = "1"
 DocumenterVitepress = "0.3"
+EpiAwarePackageTools = "0.3, 0.4"
 ForwardDiff = "0.10, 1"
 Literate = "2"
 Plots = "1"

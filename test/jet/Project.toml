@@ -8,10 +8,6 @@ EpiAwareADTools = "908e2895-a690-4874-a954-ca006cb9734d"
 
 [sources]
 EpiAwareADTools = {path = "../.."}
-# Until EpiAwarePackageTools is registered, it is pinned by git so
-# the env resolves out of the box. Switch to a local path to
-# develop the kit alongside this package.
-EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.jl", rev = "main"}
 
 # Pin JET to the 0.x minors this environment has actually been run against, so
 # a new minor (which is a breaking bump under Julia's 0.x semver) cannot
@@ -20,4 +16,5 @@ EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.
 # (see .github/dependabot.yml), so the bump arrives as a reviewable PR rather
 # than as drift between this pin and the one in ../Project.toml.
 [compat]
+EpiAwarePackageTools = "0.3, 0.4"
 JET = "0.11, 0.12"
