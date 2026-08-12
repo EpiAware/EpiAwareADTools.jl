@@ -127,7 +127,7 @@ task test-formatting  # Runic check
 ### AD gradient harness
 
 The AD-safe hooks exist to differentiate cleanly across every backend the ecosystem uses.
-The harness in `test/ad/` sweeps the scenarios registered in `test/ADFixtures/` across six backends: ForwardDiff, ReverseDiff, Enzyme (reverse and forward), and Mooncake (reverse and forward), each an `@testitem` tagged for per-backend CI selection.
+The harness in `test/ad/` sweeps the scenarios registered in `test/ADFixtures/` across seven backends: ForwardDiff, ReverseDiff (tape and compiled), Enzyme (reverse and forward), and Mooncake (reverse and forward), each an `@testitem` tagged for per-backend CI selection.
 The scenarios differentiate each hook (and the internal `_gamma_cdf`) with respect to a Gamma's shape and scale.
 
 ```bash

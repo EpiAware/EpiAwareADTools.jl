@@ -64,11 +64,11 @@ The VS Code Test Explorer lists each `@testitem` individually, so you can run on
 **A:** They live in their own environment under `test/ad/` and are excluded from the main suite:
 
 ```bash
-task test-ad                             # all six backends
+task test-ad                             # all seven backends
 task test-ad-backend TAG=enzyme_reverse  # a single backend
 ```
 
-Each scenario is checked against a ForwardDiff reference gradient across ForwardDiff, ReverseDiff, Enzyme (reverse and forward), and Mooncake (reverse and forward).
+Each scenario is checked against a ForwardDiff reference gradient across ForwardDiff, ReverseDiff (tape and compiled), Enzyme (reverse and forward), and Mooncake (reverse and forward).
 The scenarios differentiate every hook and the internal `_gamma_cdf` with respect to a Gamma's shape and scale.
 
 ## Documentation
