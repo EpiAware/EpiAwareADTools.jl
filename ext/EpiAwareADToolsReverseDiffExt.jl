@@ -18,7 +18,8 @@ primal(x::TrackedReal) = primal(ReverseDiff.value(x))
 # subset of the three arguments — required because `@grad_from_chainrules` is
 # signature-specific, not abstract.
 @grad_from_chainrules _gamma_cdf(
-    k::TrackedReal, θ::TrackedReal, x::TrackedReal)
+    k::TrackedReal, θ::TrackedReal, x::TrackedReal
+)
 @grad_from_chainrules _gamma_cdf(k::TrackedReal, θ::TrackedReal, x::Real)
 @grad_from_chainrules _gamma_cdf(k::TrackedReal, θ::Real, x::TrackedReal)
 @grad_from_chainrules _gamma_cdf(k::Real, θ::TrackedReal, x::TrackedReal)
@@ -30,7 +31,8 @@ primal(x::TrackedReal) = primal(ReverseDiff.value(x))
 # survival companion to `_gamma_cdf` (EpiAwareADTools#47), defined in
 # `EpiAwareADToolsChainRulesCoreExt`.
 @grad_from_chainrules _gamma_logccdf(
-    k::TrackedReal, θ::TrackedReal, x::TrackedReal)
+    k::TrackedReal, θ::TrackedReal, x::TrackedReal
+)
 @grad_from_chainrules _gamma_logccdf(k::TrackedReal, θ::TrackedReal, x::Real)
 @grad_from_chainrules _gamma_logccdf(k::TrackedReal, θ::Real, x::TrackedReal)
 @grad_from_chainrules _gamma_logccdf(k::Real, θ::TrackedReal, x::TrackedReal)
@@ -42,7 +44,8 @@ primal(x::TrackedReal) = primal(ReverseDiff.value(x))
 # `EpiAwareADToolsChainRulesCoreExt`. Without this, ReverseDiff falls back to
 # tracing `beta_inc` directly (no `TrackedReal` method, errors).
 @grad_from_chainrules _beta_cdf(
-    α::TrackedReal, β::TrackedReal, x::TrackedReal)
+    α::TrackedReal, β::TrackedReal, x::TrackedReal
+)
 @grad_from_chainrules _beta_cdf(α::TrackedReal, β::TrackedReal, x::Real)
 @grad_from_chainrules _beta_cdf(α::TrackedReal, β::Real, x::TrackedReal)
 @grad_from_chainrules _beta_cdf(α::Real, β::TrackedReal, x::TrackedReal)

@@ -91,20 +91,27 @@ end
 # `params(::Truncated)` has no matching constructor (#57, #58); rebuild
 # through the public `truncated` instead.
 function primal_distribution(d::Truncated)
-    return truncated(primal_distribution(d.untruncated);
-        lower = primal(d.lower), upper = primal(d.upper))
+    return truncated(
+        primal_distribution(d.untruncated);
+        lower = primal(d.lower), upper = primal(d.upper)
+    )
 end
 
 # `params(::Censored)` has the same shape and the same defect.
 function primal_distribution(d::Distributions.Censored)
-    return censored(primal_distribution(d.uncensored);
-        lower = primal(d.lower), upper = primal(d.upper))
+    return censored(
+        primal_distribution(d.uncensored);
+        lower = primal(d.lower), upper = primal(d.upper)
+    )
 end
 
 # Out of line so the rebuild path stays a plain dispatch.
 @noinline function _unreconstructable(d, D)
-    throw(ArgumentError(
-        "primal_distribution cannot rebuild a $(typeof(d)): its `params` " *
-        "do not match a `$(D)` constructor. Define a `primal_distribution` " *
-        "method for this type."))
+    throw(
+        ArgumentError(
+            "primal_distribution cannot rebuild a $(typeof(d)): its `params` " *
+                "do not match a `$(D)` constructor. Define a `primal_distribution` " *
+                "method for this type."
+        )
+    )
 end

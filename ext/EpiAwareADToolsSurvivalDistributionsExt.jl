@@ -1,7 +1,7 @@
 module EpiAwareADToolsSurvivalDistributionsExt
 
 import EpiAwareADTools: cdf_ad_safe, ccdf_ad_safe,
-                        logcdf_ad_safe, logccdf_ad_safe
+    logcdf_ad_safe, logccdf_ad_safe
 import Distributions: logcdf
 import SurvivalDistributions as SD
 

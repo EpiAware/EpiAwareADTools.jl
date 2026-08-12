@@ -17,7 +17,8 @@
     # reproducing exactly what `logsumexp` computes over the same batch.
     result = logsumexp_stream(
         k -> fixed[k + 1]; max_terms = n, min_stable_terms = n + 1,
-        strict = false)
+        strict = false
+    )
 
     @test result.terms_used == n
     @test result.converged == false  # the hard cap, not the run rule, stopped it
@@ -45,7 +46,8 @@ end
     for offset in (690.0, -690.0)
         terms = [offset - k for k in 0:200]
         result = logsumexp_stream(
-            k -> terms[k + 1]; max_terms = 300, min_stable_terms = 10)
+            k -> terms[k + 1]; max_terms = 300, min_stable_terms = 10
+        )
         @test result.converged
         @test isfinite(result.value)
         @test result.value ≈ logsumexp(terms[1:result.terms_used])
@@ -58,11 +60,14 @@ end
     # A term sequence that dips to a tiny value once, then recovers to a
     # larger one, then decays for good: a first-negligible-term rule would
     # truncate right after the dip and miss the later, larger contribution.
-    seq = [0.0, -50.0, 3.0, -1.0, -2.0, -3.0, -4.0, -5.0, -6.0, -7.0, -8.0,
-        -9.0, -10.0, -11.0, -12.0, -13.0, -14.0, -15.0]
+    seq = [
+        0.0, -50.0, 3.0, -1.0, -2.0, -3.0, -4.0, -5.0, -6.0, -7.0, -8.0,
+        -9.0, -10.0, -11.0, -12.0, -13.0, -14.0, -15.0,
+    ]
     result = logsumexp_stream(
         k -> k < length(seq) ? seq[k + 1] : -100.0 - Float64(k);
-        atol = 1e-9, min_stable_terms = 5, max_terms = 200)
+        atol = 1.0e-9, min_stable_terms = 5, max_terms = 200
+    )
 
     @test result.converged
     # The recovered term (index 2, value 3.0) must be included: the total
@@ -86,14 +91,16 @@ end
 
     # A strictly increasing series never stabilises within any finite run.
     @test_throws ErrorException logsumexp_stream(
-        k -> Float64(k); max_terms = 10, min_stable_terms = 3)
+        k -> Float64(k); max_terms = 10, min_stable_terms = 3
+    )
 end
 
 @testitem "logsumexp_stream: strict = false returns a partial result with converged = false" begin
     using EpiAwareADTools: logsumexp_stream
 
     result = logsumexp_stream(
-        k -> Float64(k); max_terms = 10, min_stable_terms = 3, strict = false)
+        k -> Float64(k); max_terms = 10, min_stable_terms = 3, strict = false
+    )
     @test result.converged == false
     @test result.terms_used == 10
     @test isfinite(result.value)
@@ -103,6 +110,7 @@ end
     using EpiAwareADTools: logsumexp_stream
 
     @test_throws ArgumentError logsumexp_stream(
-        k -> -Float64(k); min_stable_terms = 0)
+        k -> -Float64(k); min_stable_terms = 0
+    )
     @test_throws ArgumentError logsumexp_stream(k -> -Float64(k); max_terms = 0)
 end

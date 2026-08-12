@@ -12,9 +12,11 @@
 
     # `(sigma, nu, gamma)`; gamma = 1 reduces to the inner Gamma, the others
     # exercise the `t^gamma` transform in both directions.
-    for d in (SD.GeneralizedGamma(1.5, 2.0, 1.3),
-        SD.GeneralizedGamma(0.8, 1.2, 0.7),
-        SD.GeneralizedGamma(2.0, 3.0, 1.0))
+    for d in (
+            SD.GeneralizedGamma(1.5, 2.0, 1.3),
+            SD.GeneralizedGamma(0.8, 1.2, 0.7),
+            SD.GeneralizedGamma(2.0, 3.0, 1.0),
+        )
         for x in (0.4, 1.0, 3.2, 8.0)
             @test cdf_ad_safe(d, x) ≈ cdf(d, x)
             @test ccdf_ad_safe(d, x) ≈ ccdf(d, x)
@@ -83,7 +85,7 @@ end
     # fixed behaviour.
     d = SD.GeneralizedGamma(1.5, 2.0, 1.3)
     for x in (0.4, 1.0, 3.2, 8.0, 15.0, 20.0, 30.0, 50.0, 100.0, 500.0)
-        @test logccdf_ad_safe(d, x)≈logccdf(d, x) rtol=1e-9
+        @test logccdf_ad_safe(d, x) ≈ logccdf(d, x) rtol = 1.0e-9
     end
 end
 

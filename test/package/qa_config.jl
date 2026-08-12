@@ -13,6 +13,11 @@ const QA_CONFIG = (
     # Path to the isolated JET environment (see test/jet/Project.toml).
     jet_env = joinpath(@__DIR__, "..", "jet"),
 
+    # Path to the isolated formatter environment, so the formatting check runs
+    # pinned to the exact Runic version, rather than whatever version the
+    # shared test environment resolves on the CI Julia in use (#321).
+    formatter_env = joinpath(@__DIR__, "..", "formatter"),
+
     # Per-check Aqua relaxations, e.g. (; ambiguities = false). Empty = all on.
     aqua = (;),
 
@@ -21,9 +26,11 @@ const QA_CONFIG = (
     # ForwardDiffExt into the session, the public-imports walk inspects the
     # extension too, which imports its parent's gamma internals plus
     # ForwardDiff's Dual plumbing — the standard extension pattern.
-    ei_ignore = (:Dual, :value, :partials, :_gamma_cdf,
+    ei_ignore = (
+        :Dual, :value, :partials, :_gamma_cdf,
         :_gamma_cdf_value_and_partials, :_gamma_logccdf,
-        :_gamma_logccdf_value_and_partials),
+        :_gamma_logccdf_value_and_partials,
+    ),
 
     # Docstring `crossref_ignore`: upstream names docstrings link to via
     # `[`name`](@ref)`, e.g. (:pdf, :cdf, :logpdf).
@@ -55,17 +62,22 @@ const QA_CONFIG = (
         # slots keep the "at least one Dual" space unambiguous (a shared-tag
         # parametrisation leaves the mixed-tag intersections uncovered and flags
         # all six partial pairs).
-        (; name = :EpiAwareADToolsForwardDiffExt,
+        (;
+            name = :EpiAwareADToolsForwardDiffExt,
             triggers = ("ForwardDiff",),
-            prefixes = ("EpiAwareADTools", "ForwardDiff", "Distributions")),
+            prefixes = ("EpiAwareADTools", "ForwardDiff", "Distributions"),
+        ),
         # The GeneralizedGamma hook methods, plus the `Distributions.logcdf`
         # method `SurvivalDistributions` leaves unclaimed. The only extension
         # here adding a method to a third-party generic on a third-party type,
         # so the ambiguity check earns its keep; `SurvivalDistributions` is a
         # main-test-env dep, so it meets the criterion above.
-        (; name = :EpiAwareADToolsSurvivalDistributionsExt,
+        (;
+            name = :EpiAwareADToolsSurvivalDistributionsExt,
             triggers = ("SurvivalDistributions",),
             prefixes = (
-                "EpiAwareADTools", "SurvivalDistributions", "Distributions"))
-    )
+                "EpiAwareADTools", "SurvivalDistributions", "Distributions",
+            ),
+        ),
+    ),
 )

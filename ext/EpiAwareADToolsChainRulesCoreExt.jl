@@ -1,9 +1,9 @@
 module EpiAwareADToolsChainRulesCoreExt
 
 using EpiAwareADTools: primal, _gamma_cdf, _gamma_cdf_value_and_partials,
-                       _gamma_logccdf, _gamma_logccdf_value_and_partials,
-                       _beta_cdf, _beta_cdf_value_and_partials,
-                       NonDifferentiable
+    _gamma_logccdf, _gamma_logccdf_value_and_partials,
+    _beta_cdf, _beta_cdf_value_and_partials,
+    NonDifferentiable
 using ChainRulesCore: ChainRulesCore, NoTangent
 
 # `primal` is a tape-strip returning a non-differentiable primal value (a
@@ -42,7 +42,8 @@ end
 # calls `ChainRulesCore.frule`, which returns `nothing` for an undefined rule
 # and trips `iterate(::Nothing)`.
 function ChainRulesCore.frule(
-        (_, Δk, Δθ, Δx), ::typeof(_gamma_cdf), k::Real, θ::Real, x::Real)
+        (_, Δk, Δθ, Δx), ::typeof(_gamma_cdf), k::Real, θ::Real, x::Real
+    )
     Ω, dk, dθ, dx = _gamma_cdf_value_and_partials(k, θ, x)
     return Ω, dk * Δk + dθ * Δθ + dx * Δx
 end
@@ -54,7 +55,8 @@ end
 # `_gamma_cdf_value_and_partials`'s `(dk, dθ, dx)` divided by an
 # accurately-computed `Q` rather than a literal `1 - P`.
 function ChainRulesCore.rrule(
-        ::typeof(_gamma_logccdf), k::Real, θ::Real, x::Real)
+        ::typeof(_gamma_logccdf), k::Real, θ::Real, x::Real
+    )
     Ω, dk, dθ, dx = _gamma_logccdf_value_and_partials(k, θ, x)
     function _gamma_logccdf_pullback(ȳ)
         return (NoTangent(), dk * ȳ, dθ * ȳ, dx * ȳ)
@@ -63,7 +65,8 @@ function ChainRulesCore.rrule(
 end
 
 function ChainRulesCore.frule(
-        (_, Δk, Δθ, Δx), ::typeof(_gamma_logccdf), k::Real, θ::Real, x::Real)
+        (_, Δk, Δθ, Δx), ::typeof(_gamma_logccdf), k::Real, θ::Real, x::Real
+    )
     Ω, dk, dθ, dx = _gamma_logccdf_value_and_partials(k, θ, x)
     return Ω, dk * Δk + dθ * Δθ + dx * Δx
 end
@@ -83,7 +86,8 @@ function ChainRulesCore.rrule(::typeof(_beta_cdf), α::Real, β::Real, x::Real)
 end
 
 function ChainRulesCore.frule(
-        (_, Δα, Δβ, Δx), ::typeof(_beta_cdf), α::Real, β::Real, x::Real)
+        (_, Δα, Δβ, Δx), ::typeof(_beta_cdf), α::Real, β::Real, x::Real
+    )
     Ω, dα, dβ, dx = _beta_cdf_value_and_partials(α, β, x)
     return Ω, dα * Δα + dβ * Δβ + dx * Δx
 end

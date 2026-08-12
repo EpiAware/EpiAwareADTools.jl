@@ -32,11 +32,7 @@ Mixing a differentiated parameter alongside a `fixed_draw` constant in the same 
 
 ```@example reparameterisation
 T = ad_eltype(3.0)
-total = zero(T)
-for zi in fixed_draw.([0.1, 0.4, 0.9])
-    total += zi
-end
-total
+total = sum(fixed_draw.([0.1, 0.4, 0.9]); init = zero(T))
 ```
 
 Enzyme and Mooncake trace plain `Float64` code by source transformation rather than threading a wrapper type through the primal computation, so `ad_eltype` is a harmless no-op — always `Float64` — on those two backends.
