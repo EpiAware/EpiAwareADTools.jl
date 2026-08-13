@@ -3,9 +3,9 @@
 # resolves. Seeded with BenchmarkTools, the package, and the shared
 # EpiAwarePackageTools benchmark harness; the AD-backend deps drive the
 # gradient suite (`benchmark/src/ad_gradients.jl`) against the shared
-# `test/ADFixtures` registry. EpiAwarePackageTools is pinned by git via
-# `[sources]` until it is registered (mirror the test env's pin if you
-# switch to a path).
+# `test/ADFixtures` registry. EpiAwarePackageTools is registered, so it is
+# bounded via `[compat]` (mirror the test env's bound if you switch to a
+# path to develop the kit alongside this package).
 [deps]
 ADFixtures = "88035cd3-dce1-471d-b78e-eb10797b6387"
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -23,12 +23,9 @@ ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 [sources]
 ADFixtures = {path = "../test/ADFixtures"}
 EpiAwareADTools = {path = ".."}
-# Until EpiAwarePackageTools is registered, it is pinned by git so the env
-# resolves out of the box. Switch to a local path to develop the kit
-# alongside this package.
-EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.jl", rev = "main"}
 
 [compat]
 BenchmarkTools = "1"
 # Floored at 0.25.92: matches the main Project.toml floor (see there for why).
 Distributions = "0.25.92"
+EpiAwarePackageTools = "0.3, 0.4"

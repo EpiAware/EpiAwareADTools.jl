@@ -64,11 +64,11 @@ The VS Code Test Explorer lists each `@testitem` individually, so you can run on
 **A:** They live in their own environment under `test/ad/` and are excluded from the main suite:
 
 ```bash
-task test-ad                             # all six backends
+task test-ad                             # all seven backends
 task test-ad-backend TAG=enzyme_reverse  # a single backend
 ```
 
-Each scenario is checked against a ForwardDiff reference gradient across ForwardDiff, ReverseDiff, Enzyme (reverse and forward), and Mooncake (reverse and forward).
+Each scenario is checked against a ForwardDiff reference gradient across ForwardDiff, ReverseDiff (tape and compiled), Enzyme (reverse and forward), and Mooncake (reverse and forward).
 The scenarios differentiate every hook and the internal `_gamma_cdf` with respect to a Gamma's shape and scale.
 
 ## Documentation
@@ -123,12 +123,12 @@ task test-quality  # Aqua, ExplicitImports, docstring format, doctest, ...
 **A:** Format the tree, then re-run the check:
 
 ```bash
-task format           # apply JuliaFormatter to src/test/docs/benchmark
+task format           # apply Runic to src/test/docs/benchmark/ext
 task test-formatting  # verify without modifying files
 ```
 
-The formatter runs from the isolated `test/formatter` environment, which pins `JuliaFormatter` to an exact version so the check is reproducible across the CI Julia matrix.
-Keep that pin in step with the `.pre-commit-config.yaml` JuliaFormatter `rev`, or `test` and `pre-commit` will disagree about formatting.
+The formatter runs from the isolated `test/formatter` environment, which pins `Runic` to an exact version so the check is reproducible across the CI Julia matrix.
+Keep that pin in step with the `.pre-commit-config.yaml` Runic `additional_dependencies` version, or `test` and `pre-commit` will disagree about formatting.
 
 ### Q: How do I check for type stability?
 

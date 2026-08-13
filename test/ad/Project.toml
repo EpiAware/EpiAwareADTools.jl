@@ -27,10 +27,6 @@ EpiAwareADTools = "908e2895-a690-4874-a954-ca006cb9734d"
 [sources]
 ADFixtures = {path = "../ADFixtures"}
 EpiAwareADTools = {path = "../.."}
-# Until EpiAwarePackageTools is registered, it is pinned by git so the env
-# resolves out of the box. Switch to a local path if you develop the kit
-# alongside this package.
-EpiAwarePackageTools = {url = "https://github.com/EpiAware/EpiAwarePackageTools.jl", rev = "main"}
 
 [compat]
 ADTypes = "1.23.0"
@@ -39,6 +35,7 @@ DifferentiationInterface = "0.7.20"
 DifferentiationInterfaceTest = "0.11.0"
 Distributions = "0.25.130"
 Enzyme = "0.13.199"
+EpiAwarePackageTools = "0.3, 0.4"
 FiniteDifferences = "0.12.34"
 ForwardDiff = "1.4.5"
 LogExpFunctions = "1.0.1"

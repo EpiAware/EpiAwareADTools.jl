@@ -11,10 +11,10 @@ const LIGHT_TUTORIALS = String[]
 
 # Heavy tutorials (live MCMC fits, multi-backend AD, plotting) each run once
 # in a fresh subprocess so native/memory state cannot accumulate. The
-# `ad-backends.jl` page itself is kit-managed; only this registration is
-# package-owned. Its `ad-comparison.jl` sibling is registered in
-# `HEAVY_BENCHMARKS` below.
-const HEAVY_TUTORIALS = ["ad-backends.jl"]
+# AD-backends tutorial was retired: its content now lives on the
+# AD-comparison benchmark page (`HEAVY_BENCHMARKS` below), which carries the
+# `ad-backends` anchor so existing `@ref` links keep resolving.
+const HEAVY_TUTORIALS = String[]
 
 # Where tutorial `.jl` sources and rendered `.md` pages live, relative to
 # `docs/src`.
@@ -23,10 +23,7 @@ const TUTORIALS_SUBDIR = joinpath("getting-started", "tutorials")
 # Fast-build stubs (`--skip-notebooks`): `"file.md" => "# Heading"` pairs.
 # Preserve the tutorial's `@id` in the heading so cross-references still
 # resolve in a fast build.
-const TUTORIAL_STUBS = Pair{String, String}[
-    "ad-backends.md" =>
-        "# [Automatic differentiation backends](@id ad-backends)",
-]
+const TUTORIAL_STUBS = Pair{String, String}[]
 
 # Heavy tutorials that always render from their `TUTORIAL_STUBS` heading and
 # never execute, independent of `--skip-notebooks` — the escape hatch for a

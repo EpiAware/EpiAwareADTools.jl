@@ -12,7 +12,10 @@
 #     subprocess) driven by `docs_config.jl`; under `--skip-notebooks` light
 #     tutorials still render in-process and only heavy ones fall back to
 #     heading stubs; any `FORCE_STUB_TUTORIALS` entry always stubs,
-#     independent of that flag, while its heavy siblings run normally,
+#     independent of that flag, while its heavy siblings run normally, and
+#     any `TUTORIAL_ENVIRONMENTS` entry resolves against the environment it
+#     names instead of the shared docs one, and `HEAVY_TUTORIAL_WORKERS`
+#     runs that many heavy tutorials at once,
 #   - runs the same pipeline over `docs/src/benchmarks/`, driven by
 #     `HEAVY_BENCHMARKS`/`BENCHMARK_STUBS`, so a benchmark report gets its
 #     own nav group rather than sitting under Tutorials,
@@ -71,6 +74,18 @@ build_docs(
     heavy_tutorials = _cfg(:HEAVY_TUTORIALS, String[]),
     tutorial_stubs = _cfg(:TUTORIAL_STUBS, Pair{String, String}[]),
     force_stub_tutorials = _cfg(:FORCE_STUB_TUTORIALS, String[]),
+    # Heavy tutorials that resolve against their own environment rather than
+    # the shared docs one, as `"file.jl" => "environment/dir"` pairs. Empty
+    # for a `docs_config.jl` predating the const, so every tutorial builds
+    # against `docs/` exactly as before.
+    tutorial_environments = _cfg(
+        :TUTORIAL_ENVIRONMENTS, Pair{String, String}[]
+    ),
+    # How many heavy tutorials execute at once, each still in its own
+    # subprocess, with the thread budget divided between them. Defaults to 1
+    # (one after another, as before) for a `docs_config.jl` predating the
+    # const, and for every package that has not opted in.
+    heavy_tutorial_workers = _cfg(:HEAVY_TUTORIAL_WORKERS, 1),
     # The `docs/src/benchmarks/` pipeline (e.g. `ad-comparison.jl`), same
     # convention as the tutorials pipeline above but its own nav group
     # (#299/#305). `_cfg` defaults both to empty for a `docs_config.jl` that
