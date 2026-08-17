@@ -10,6 +10,18 @@
 # gap `_gamma_cdf` fills (SpecialFunctions.jl issue #531). The hooks are deleted
 # once a Gamma CDF differentiable in its parameters ships upstream and wrapper
 # packages can call `cdf`/`logcdf` directly.
+#
+# The `LogNormal`/`Weibull` methods are a narrower case: their stock
+# evaluators are already differentiable in shape/scale everywhere *inside*
+# the support, so no analytic replacement is needed. Below the support
+# (`u <= 0`), though, both route the fixed `-Inf`/`0` boundary value through
+# an expression that still carries the Dual parameters -- `log(max(u, 0))`
+# for `LogNormal` (Distributions.jl `lognormal.jl`), `log1mexp(-zval)` with
+# `zval = (max(u, 0)/θ)^α = 0` for `Weibull` (`weibull.jl`) -- and both
+# produce `0 * (-Inf)` or `0/0` in the chain rule, so a finite primal comes
+# back with a `NaN` gradient (ConvolvedDistributions.jl#194). The guards
+# below short-circuit to the true (parameter-independent) boundary constant
+# instead.
 
 @doc """
 AD-safe `logcdf(dist, u)` for use inside differentiable integrands.
@@ -46,6 +58,16 @@ function logcdf_ad_safe(dist::Beta, u::Real)
     return log(_beta_cdf(dist.α, dist.β, u))
 end
 
+function logcdf_ad_safe(dist::LogNormal, u::Real)
+    u <= 0 && return oftype(float(u), -Inf)
+    return logcdf(dist, u)
+end
+
+function logcdf_ad_safe(dist::Weibull, u::Real)
+    u <= 0 && return oftype(float(u), -Inf)
+    return logcdf(dist, u)
+end
+
 @doc """
 AD-safe `cdf(dist, u)` companion to [`logcdf_ad_safe`](@ref).
 
@@ -76,6 +98,11 @@ end
 
 function cdf_ad_safe(dist::Beta, u::Real)
     return _beta_cdf(dist.α, dist.β, u)
+end
+
+function cdf_ad_safe(dist::LogNormal, u::Real)
+    u <= 0 && return zero(float(u))
+    return cdf(dist, u)
 end
 
 @doc raw"""
@@ -116,6 +143,11 @@ function logccdf_ad_safe(dist::Beta, u::Real)
     return log1p(-_beta_cdf(dist.α, dist.β, u))
 end
 
+function logccdf_ad_safe(dist::LogNormal, u::Real)
+    u <= 0 && return zero(float(u))
+    return logccdf(dist, u)
+end
+
 @doc raw"""
 AD-safe `ccdf(dist, u)`: the survival ``1 - F(u)``.
 
@@ -146,6 +178,11 @@ end
 
 function ccdf_ad_safe(dist::Beta, u::Real)
     return 1 - _beta_cdf(dist.α, dist.β, u)
+end
+
+function ccdf_ad_safe(dist::LogNormal, u::Real)
+    u <= 0 && return one(float(u))
+    return ccdf(dist, u)
 end
 
 @doc """
@@ -186,4 +223,13 @@ function pdf_ad_safe(dist::Beta, t::Real)
     (t <= 0 || t >= 1) && return zero(float(t))
     α, β = dist.α, dist.β
     return exp((α - 1) * log(t) + (β - 1) * log1p(-t) - logbeta(α, β))
+end
+
+# Stock `pdf(::LogNormal)` resets `x` to `1` and takes `log(zero(x))` at the
+# `x <= 0` boundary, then still evaluates `normpdf(μ, σ, -Inf)`: the primal
+# is the correct `0`, but the `-Inf` carries through the chain rule as
+# `0 * (-Inf)` and the gradient comes back `NaN` (ConvolvedDistributions.jl#194).
+function pdf_ad_safe(dist::LogNormal, t::Real)
+    t <= 0 && return zero(float(t))
+    return pdf(dist, t)
 end

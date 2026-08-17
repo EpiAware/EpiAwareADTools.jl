@@ -47,11 +47,11 @@ end
     end
 end
 
-@testitem "hooks fall through for a non-Gamma distribution" begin
+@testitem "hooks fall through for a distribution with no dedicated method" begin
     using EpiAwareADTools
-    using Distributions: Normal, LogNormal, cdf, logcdf, ccdf, logccdf, pdf
+    using Distributions: Normal, Exponential, cdf, logcdf, ccdf, logccdf, pdf
 
-    for d in (Normal(1.0, 2.0), LogNormal(0.5, 0.4))
+    for d in (Normal(1.0, 2.0), Exponential(1.5))
         for x in (0.3, 1.5, 4.0)
             @test cdf_ad_safe(d, x) == cdf(d, x)
             @test logcdf_ad_safe(d, x) == logcdf(d, x)
@@ -91,6 +91,74 @@ end
     # At-or-above-one evaluation points: CDF saturates to 1.
     @test cdf_ad_safe(d, 1.0) == 1.0
     @test ccdf_ad_safe(d, 1.0) == 0.0
+end
+
+@testitem "hooks agree with Distributions on LogNormal" begin
+    using EpiAwareADTools
+    using Distributions: LogNormal, cdf, logcdf, ccdf, logccdf, pdf
+
+    d = LogNormal(1.0, 0.75)
+    for x in (0.3, 1.2, 2.5, 5.1)
+        @test cdf_ad_safe(d, x) ≈ cdf(d, x)
+        @test logcdf_ad_safe(d, x) ≈ logcdf(d, x)
+        @test ccdf_ad_safe(d, x) ≈ ccdf(d, x)
+        @test logccdf_ad_safe(d, x) ≈ logccdf(d, x)
+        @test pdf_ad_safe(d, x) ≈ pdf(d, x)
+    end
+end
+
+@testitem "hooks agree with Distributions on Weibull" begin
+    using EpiAwareADTools
+    using Distributions: Weibull, cdf, logcdf, ccdf, logccdf, pdf
+
+    d = Weibull(2.0, 1.5)
+    for x in (0.3, 1.2, 2.5, 5.1)
+        @test cdf_ad_safe(d, x) ≈ cdf(d, x)
+        @test logcdf_ad_safe(d, x) ≈ logcdf(d, x)
+        @test ccdf_ad_safe(d, x) ≈ ccdf(d, x)
+        @test logccdf_ad_safe(d, x) ≈ logccdf(d, x)
+        @test pdf_ad_safe(d, x) ≈ pdf(d, x)
+    end
+end
+
+@testitem "hook LogNormal boundary guards" begin
+    using EpiAwareADTools
+    using Distributions: LogNormal
+
+    d = LogNormal(1.0, 0.75)
+    # Non-positive evaluation points: CDF/survival limits.
+    @test cdf_ad_safe(d, 0.0) == 0.0
+    @test cdf_ad_safe(d, -1.0) == 0.0
+    @test logcdf_ad_safe(d, 0.0) == -Inf
+    @test logcdf_ad_safe(d, -1.0) == -Inf
+    @test ccdf_ad_safe(d, 0.0) == 1.0
+    @test ccdf_ad_safe(d, -1.0) == 1.0
+    @test logccdf_ad_safe(d, 0.0) == 0.0
+    @test logccdf_ad_safe(d, -1.0) == 0.0
+    @test pdf_ad_safe(d, 0.0) == 0.0
+    @test pdf_ad_safe(d, -1.0) == 0.0
+end
+
+@testitem "hook Weibull boundary guards" begin
+    using EpiAwareADTools
+    using Distributions: Weibull
+
+    d = Weibull(2.0, 1.5)
+    # Non-positive evaluation points: only `logcdf_ad_safe` needs a
+    # dedicated guard here (the stock `cdf`/`ccdf`/`logccdf`/`pdf` already
+    # have a finite gradient at the boundary), but all five values are
+    # pinned so a future change cannot silently reintroduce the NaN on one
+    # of them.
+    @test cdf_ad_safe(d, 0.0) == 0.0
+    @test cdf_ad_safe(d, -1.0) == 0.0
+    @test logcdf_ad_safe(d, 0.0) == -Inf
+    @test logcdf_ad_safe(d, -1.0) == -Inf
+    @test ccdf_ad_safe(d, 0.0) == 1.0
+    @test ccdf_ad_safe(d, -1.0) == 1.0
+    @test logccdf_ad_safe(d, 0.0) == 0.0
+    @test logccdf_ad_safe(d, -1.0) == 0.0
+    @test pdf_ad_safe(d, 0.0) == 0.0
+    @test pdf_ad_safe(d, -1.0) == 0.0
 end
 
 @testitem "primal is the identity on plain reals" begin
