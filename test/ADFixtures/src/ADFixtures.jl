@@ -25,8 +25,8 @@ __precompile__(false)
 
 using EpiAwareADTools
 using EpiAwareADTools: _gamma_cdf, _beta_cdf
-using Distributions: Distributions, Gamma, Beta, Exponential, Normal,
-    truncated, logcdf, logpdf, quantile
+using Distributions: Distributions, Gamma, Beta, LogNormal, Weibull,
+    Exponential, Normal, truncated, logcdf, logpdf, quantile
 # Loads `EpiAwareADToolsSurvivalDistributionsExt`, whose GeneralizedGamma hook
 # methods the survival scenarios below differentiate.
 import SurvivalDistributions as SD
@@ -226,6 +226,67 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
         "_beta_cdf direct",
         (θ, _obs) -> _beta_cdf(θ[1], θ[2], θ[3]),
         [1.7, 2.3, 0.85], (Constant(obs_beta),)
+    )
+
+    # LogNormal/Weibull support is (0, ∞); `obs_below_support` leads with a
+    # point below it so every scenario exercises the `u <= 0` boundary guard
+    # added to each hook, not just the interior stock evaluation
+    # (ConvolvedDistributions.jl#194: a finite primal at the boundary came
+    # back with a NaN gradient under every backend, because the stock
+    # evaluator still routes the fixed boundary value through an expression
+    # that carries the Dual shape/scale parameters).
+    obs_below_support = [-0.5, 0.3, 1.2, 2.5, 5.1]
+
+    _push!(
+        "cdf_ad_safe LogNormal",
+        (θ, obs) -> sum(x -> cdf_ad_safe(LogNormal(θ[1], θ[2]), x), obs),
+        [1.0, 0.75], (Constant(obs_below_support),)
+    )
+    _push!(
+        "logcdf_ad_safe LogNormal",
+        (θ, obs) -> sum(x -> logcdf_ad_safe(LogNormal(θ[1], θ[2]), x), obs),
+        [1.0, 0.75], (Constant(obs_below_support),)
+    )
+    _push!(
+        "ccdf_ad_safe LogNormal",
+        (θ, obs) -> sum(x -> ccdf_ad_safe(LogNormal(θ[1], θ[2]), x), obs),
+        [1.0, 0.75], (Constant(obs_below_support),)
+    )
+    _push!(
+        "logccdf_ad_safe LogNormal",
+        (θ, obs) -> sum(x -> logccdf_ad_safe(LogNormal(θ[1], θ[2]), x), obs),
+        [1.0, 0.75], (Constant(obs_below_support),)
+    )
+    _push!(
+        "pdf_ad_safe LogNormal",
+        (θ, obs) -> sum(x -> pdf_ad_safe(LogNormal(θ[1], θ[2]), x), obs),
+        [1.0, 0.75], (Constant(obs_below_support),)
+    )
+
+    _push!(
+        "cdf_ad_safe Weibull",
+        (θ, obs) -> sum(x -> cdf_ad_safe(Weibull(θ[1], θ[2]), x), obs),
+        [2.0, 1.5], (Constant(obs_below_support),)
+    )
+    _push!(
+        "logcdf_ad_safe Weibull",
+        (θ, obs) -> sum(x -> logcdf_ad_safe(Weibull(θ[1], θ[2]), x), obs),
+        [2.0, 1.5], (Constant(obs_below_support),)
+    )
+    _push!(
+        "ccdf_ad_safe Weibull",
+        (θ, obs) -> sum(x -> ccdf_ad_safe(Weibull(θ[1], θ[2]), x), obs),
+        [2.0, 1.5], (Constant(obs_below_support),)
+    )
+    _push!(
+        "logccdf_ad_safe Weibull",
+        (θ, obs) -> sum(x -> logccdf_ad_safe(Weibull(θ[1], θ[2]), x), obs),
+        [2.0, 1.5], (Constant(obs_below_support),)
+    )
+    _push!(
+        "pdf_ad_safe Weibull",
+        (θ, obs) -> sum(x -> pdf_ad_safe(Weibull(θ[1], θ[2]), x), obs),
+        [2.0, 1.5], (Constant(obs_below_support),)
     )
 
     # `nondifferentiable` (EpiAwareADTools#37): `θ[1]` flows only through the
