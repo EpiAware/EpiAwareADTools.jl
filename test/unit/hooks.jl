@@ -93,6 +93,49 @@ end
     @test ccdf_ad_safe(d, 1.0) == 0.0
 end
 
+@testitem "hooks agree with Distributions on TDist" begin
+    using EpiAwareADTools
+    using Distributions: TDist, cdf, logcdf, ccdf, logccdf, pdf
+
+    for ν in (1.5, 5.0, 30.0)
+        d = TDist(ν)
+        for x in (-8.0, -2.0, -0.3, 0.0, 0.3, 2.0, 8.0)
+            @test cdf_ad_safe(d, x) ≈ cdf(d, x)
+            @test logcdf_ad_safe(d, x) ≈ logcdf(d, x)
+            @test ccdf_ad_safe(d, x) ≈ ccdf(d, x)
+            @test logccdf_ad_safe(d, x) ≈ logccdf(d, x)
+            @test pdf_ad_safe(d, x) ≈ pdf(d, x)
+        end
+    end
+end
+
+@testitem "hooks agree with Distributions on a location-scale TDist" begin
+    using EpiAwareADTools
+    using Distributions: TDist, cdf, logcdf, ccdf, logccdf
+
+    d = 1.4 + 0.6 * TDist(4.0)
+    for x in (-5.0, -0.2, 1.4, 3.0, 9.0)
+        @test cdf_ad_safe(d, x) ≈ cdf(d, x)
+        @test logcdf_ad_safe(d, x) ≈ logcdf(d, x)
+        @test ccdf_ad_safe(d, x) ≈ ccdf(d, x)
+        @test logccdf_ad_safe(d, x) ≈ logccdf(d, x)
+    end
+end
+
+@testitem "TDist hooks keep both tails accurate" begin
+    using EpiAwareADTools
+    using Distributions: TDist, logcdf, logccdf
+
+    # Each tail is computed directly from the reflected CDF rather than as
+    # `log(1 - F)`, so both stay finite where `F` has already rounded to `1`
+    # (or the survival to `0`) in Float64.
+    d = TDist(5.0)
+    for x in (20.0, 60.0, 200.0, 1.0e4)
+        @test logccdf_ad_safe(d, x) ≈ logccdf(d, x) rtol = 1.0e-9
+        @test logcdf_ad_safe(d, -x) ≈ logcdf(d, -x) rtol = 1.0e-9
+    end
+end
+
 @testitem "hooks agree with Distributions on LogNormal" begin
     using EpiAwareADTools
     using Distributions: LogNormal, cdf, logcdf, ccdf, logccdf, pdf

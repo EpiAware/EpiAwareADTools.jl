@@ -52,8 +52,8 @@ module EpiAwareADTools
 # using/import live in this file (kit #105); the extensions import the
 # package's own internals from here.
 using Distributions: Distributions, UnivariateDistribution, Gamma, Beta,
-    LogNormal, Weibull, Truncated, params, shape, scale, pdf, logpdf, cdf,
-    logcdf, ccdf, logccdf, truncated, censored
+    LogNormal, Weibull, Truncated, TDist, Continuous, params, shape, scale,
+    dof, pdf, logpdf, cdf, logcdf, ccdf, logccdf, truncated, censored
 
 using SpecialFunctions: gamma_inc, loggamma, digamma, beta_inc, logbeta
 
@@ -85,6 +85,9 @@ include("gamma_ad.jl")
 # shape partials, the AD-safe `_beta_cdf`, and the shared value-and-partials
 # helper the per-backend extensions consume.
 include("beta_ad.jl")
+# Student-t CDF machinery (internal): `_t_cdf`, a composition over `_beta_cdf`
+# that inherits its per-backend AD coverage.
+include("student_t_ad.jl")
 # The AD-safe evaluation hooks wrapping cdf/logcdf/ccdf/logccdf/pdf.
 include("ad_safe.jl")
 # The user-facing differentiation opt-out: NonDifferentiable/nondifferentiable.

@@ -41,6 +41,34 @@ db = Beta(2.0, 1.0)
 cdf_ad_safe(db, 0.3), logccdf_ad_safe(db, 0.3)
 ```
 
+## [Student-t](@id student-t-hooks)
+
+`TDist`, and the `LocationScale` wrapper that gives a t a location and scale,
+have hook methods for the same reason.
+The stock `logcdf(::TDist)` routes through `StatsFuns.tdistlogcdf`, which is
+typed `(ν::T, x::T)` and so promotes an untouched degrees of freedom to the AD
+type on its way into `beta_inc`.
+The hooks reach the same value through `_beta_cdf` at a transformed argument,
+using the identity `F_ν(x) = ½ I_{ν/(ν + x²)}(ν/2, ½)` for `x ≤ 0` and its
+reflection above, so the t inherits the beta-CDF derivative's coverage on every
+backend.
+
+`Distributions.truncated` is the hardest case.
+It normalises eagerly, calling `logcdf` at the bounds when the object is
+constructed, so a truncated Student-t failed before any integrand ran
+(EpiAwareADTools#80).
+The `ForwardDiff` extension therefore also adds `logcdf`/`logccdf` methods for
+the `Dual` cases, as it does for `Gamma` and `Beta`.
+
+```@example ad-safe-hooks
+dt = 1.4 + 0.6 * TDist(4.0)
+cdf_ad_safe(dt, 2.0), logccdf_ad_safe(dt, 2.0)
+```
+
+Whichever tail is the small one is read from the CDF directly rather than
+reconstructed as `1 - F`, so `logcdf` and `logccdf` both keep full relative
+accuracy down to the point where the value underflows.
+
 ## Extending the hooks
 
 A wrapper package adds a method for its own component type.

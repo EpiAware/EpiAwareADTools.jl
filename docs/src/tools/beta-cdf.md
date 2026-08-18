@@ -35,6 +35,12 @@ just `Beta` itself — Student-t and LogLogistic among them.
   `EpiAwareADToolsForwardDiffExt` adds `Dual` methods directly; and
   `EpiAwareADToolsEnzymeExt` adds a direct Enzyme rule.
 
+`_t_cdf(ν, x)` covers the Student-t half of that reach.
+The t CDF is the same regularised incomplete beta at the argument `ν/(ν + x²)`,
+so composing over `_beta_cdf` gives the t every backend's coverage without a
+rule of its own.
+See the [Student-t hooks](@ref student-t-hooks).
+
 `ad_safe.jl`'s `pdf_ad_safe(::Beta)` override is a separate, narrower fix in
 the same family: it routes around a confirmed-wrong Enzyme rule for
 `LogExpFunctions.xlog1py`'s first argument (the stock `pdf(::Beta)` path) by

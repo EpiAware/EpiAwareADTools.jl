@@ -58,6 +58,15 @@ function logcdf_ad_safe(dist::Beta, u::Real)
     return log(_beta_cdf(dist.α, dist.β, u))
 end
 
+# The stock `logcdf(::TDist)` goes through `StatsFuns.tdistlogcdf`, whose
+# `(ν::T, x::T)` signature promotes an untouched `ν` to the dual type and lands
+# in `beta_inc`, which has no dual method (EpiAwareADTools#80).
+logcdf_ad_safe(dist::TDist, u::Real) = log(_t_cdf(dof(dist), u))
+
+function logcdf_ad_safe(dist::_LocationScaleT, u::Real)
+    return logcdf_ad_safe(dist.ρ, (u - dist.μ) / dist.σ)
+end
+
 function logcdf_ad_safe(dist::LogNormal, u::Real)
     u <= 0 && return oftype(float(u), -Inf)
     return logcdf(dist, u)
@@ -98,6 +107,12 @@ end
 
 function cdf_ad_safe(dist::Beta, u::Real)
     return _beta_cdf(dist.α, dist.β, u)
+end
+
+cdf_ad_safe(dist::TDist, u::Real) = _t_cdf(dof(dist), u)
+
+function cdf_ad_safe(dist::_LocationScaleT, u::Real)
+    return cdf_ad_safe(dist.ρ, (u - dist.μ) / dist.σ)
 end
 
 function cdf_ad_safe(dist::LogNormal, u::Real)
@@ -143,6 +158,14 @@ function logccdf_ad_safe(dist::Beta, u::Real)
     return log1p(-_beta_cdf(dist.α, dist.β, u))
 end
 
+# The t is symmetric, so the survival is the CDF at the reflected point. That
+# keeps the far right tail accurate, where `1 - F` would have rounded to zero.
+logccdf_ad_safe(dist::TDist, u::Real) = log(_t_cdf(dof(dist), -u))
+
+function logccdf_ad_safe(dist::_LocationScaleT, u::Real)
+    return logccdf_ad_safe(dist.ρ, (u - dist.μ) / dist.σ)
+end
+
 function logccdf_ad_safe(dist::LogNormal, u::Real)
     u <= 0 && return zero(float(u))
     return logccdf(dist, u)
@@ -178,6 +201,12 @@ end
 
 function ccdf_ad_safe(dist::Beta, u::Real)
     return 1 - _beta_cdf(dist.α, dist.β, u)
+end
+
+ccdf_ad_safe(dist::TDist, u::Real) = _t_cdf(dof(dist), -u)
+
+function ccdf_ad_safe(dist::_LocationScaleT, u::Real)
+    return ccdf_ad_safe(dist.ρ, (u - dist.μ) / dist.σ)
 end
 
 function ccdf_ad_safe(dist::LogNormal, u::Real)

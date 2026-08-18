@@ -29,7 +29,7 @@ Three families make up the current surface.
 - The AD-safe evaluation hooks (`cdf_ad_safe`, `logcdf_ad_safe`,
   `ccdf_ad_safe`, `logccdf_ad_safe`, and `pdf_ad_safe`) let a wrapper package
   overload CDF evaluation for its own component types, backed by analytic
-  `Gamma` and `Beta` CDF derivatives that `SpecialFunctions` leaves
+  `Gamma`, `Beta` and Student-t CDF derivatives that `SpecialFunctions` leaves
   unimplemented.
 - Correct upstream `ChainRulesCore` rules lifted into a backend that lacks
   them, currently `LogExpFunctions.xlogy`/`xlog1py` under Mooncake, which

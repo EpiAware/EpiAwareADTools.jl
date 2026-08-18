@@ -5,7 +5,8 @@ Shared AD gradient scenarios and backend metadata for EpiAwareADTools. Used by
 `test/ad/runtests.jl`. The scenarios differentiate the AD-safe hooks
 (`cdf_ad_safe`, `logcdf_ad_safe`, `ccdf_ad_safe`, `logccdf_ad_safe`,
 `pdf_ad_safe`) and the internal `_gamma_cdf`/`_beta_cdf` directly with respect
-to a Gamma's shape/scale or a Beta's two shape parameters (and, for the
+to a Gamma's shape/scale, a Beta's two shape parameters, or a Student-t's
+degrees of freedom and location/scale (and, for the
 internal functions, the evaluation point), across the ForwardDiff /
 ReverseDiff / Enzyme / Mooncake backend matrix. The hook methods the
 `SurvivalDistributions` extension adds are covered the same way, differentiated
@@ -26,7 +27,7 @@ __precompile__(false)
 using EpiAwareADTools
 using EpiAwareADTools: _gamma_cdf, _beta_cdf
 using Distributions: Distributions, Gamma, Beta, LogNormal, Weibull,
-    Exponential, Normal, truncated, logcdf, logpdf, quantile
+    Exponential, Normal, TDist, truncated, logcdf, logpdf, quantile
 # Loads `EpiAwareADToolsSurvivalDistributionsExt`, whose GeneralizedGamma hook
 # methods the survival scenarios below differentiate.
 import SurvivalDistributions as SD
@@ -226,6 +227,50 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
         "_beta_cdf direct",
         (θ, _obs) -> _beta_cdf(θ[1], θ[2], θ[3]),
         [1.7, 2.3, 0.85], (Constant(obs_beta),)
+    )
+
+    # Each hook on a Student-t, differentiated in its degrees of freedom, which
+    # the stock evaluators cannot supply. `obs_t` straddles zero without
+    # touching it: `x == 0` is the incomplete beta's singular endpoint and has
+    # its own guard, covered in `test/ad/student_t_ad.jl`.
+    obs_t = [-3.1, -0.7, 0.4, 1.6, 4.2]
+
+    _push!(
+        "cdf_ad_safe TDist",
+        (θ, obs) -> sum(x -> cdf_ad_safe(TDist(θ[1]), x), obs),
+        [4.0], (Constant(obs_t),)
+    )
+    _push!(
+        "logcdf_ad_safe TDist",
+        (θ, obs) -> sum(x -> logcdf_ad_safe(TDist(θ[1]), x), obs),
+        [4.0], (Constant(obs_t),)
+    )
+    _push!(
+        "ccdf_ad_safe TDist",
+        (θ, obs) -> sum(x -> ccdf_ad_safe(TDist(θ[1]), x), obs),
+        [4.0], (Constant(obs_t),)
+    )
+    _push!(
+        "logccdf_ad_safe TDist",
+        (θ, obs) -> sum(x -> logccdf_ad_safe(TDist(θ[1]), x), obs),
+        [4.0], (Constant(obs_t),)
+    )
+
+    # The same hooks on `μ + σ * TDist(ν)`, the shape a Student-t predictive
+    # actually takes, differentiated in all three parameters.
+    _push!(
+        "logcdf_ad_safe location-scale TDist",
+        (θ, obs) -> sum(
+            x -> logcdf_ad_safe(θ[1] + θ[2] * TDist(θ[3]), x), obs
+        ),
+        [0.3, 1.1, 4.0], (Constant(obs_t),)
+    )
+    _push!(
+        "logccdf_ad_safe location-scale TDist",
+        (θ, obs) -> sum(
+            x -> logccdf_ad_safe(θ[1] + θ[2] * TDist(θ[3]), x), obs
+        ),
+        [0.3, 1.1, 4.0], (Constant(obs_t),)
     )
 
     # LogNormal/Weibull support is (0, ∞); `obs_below_support` leads with a

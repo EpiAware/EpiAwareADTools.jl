@@ -5,7 +5,8 @@ using EpiAwareADTools: _gamma_cdf_value_and_partials,
     _gamma_logccdf_value_and_partials,
     _beta_cdf_value_and_partials, logcdf_ad_safe,
     logccdf_ad_safe
-using Distributions: Distributions, Gamma, Beta
+using Distributions: Distributions, Gamma, Beta, TDist, LocationScale,
+    Continuous
 using ForwardDiff: ForwardDiff, Dual, value, partials
 
 # Strip a ForwardDiff `Dual` to its primal value. Recurses through nested
@@ -185,5 +186,35 @@ Distributions.logcdf(d::Beta{<:Dual}, x::Dual) = logcdf_ad_safe(d, x)
 Distributions.logccdf(d::Beta{<:Dual}, x::Real) = logccdf_ad_safe(d, x)
 Distributions.logccdf(d::Beta, x::Dual) = logccdf_ad_safe(d, x)
 Distributions.logccdf(d::Beta{<:Dual}, x::Dual) = logccdf_ad_safe(d, x)
+
+# Same gap again for the Student-t. `truncated` normalises eagerly, so
+# `truncated(μ + σ * TDist(ν), l, u)` calls `logcdf` at construction and fails
+# before any integrand runs, even when only `μ`/`σ` carry `Dual`s
+# (`StatsFuns.tdistlogcdf` promotes `ν` to match).
+#
+# Unlike the `Gamma`/`Beta` cases above, `Distributions` defines
+# `logcdf(::TDist, ::Real)` and `logcdf(::LocationScale, ::Real)` outright, so
+# each method here has a same-arity rival and must be strictly narrower in one
+# slot and no wider in the other. Hence the union for the location-scale `Dual`
+# cases, which as separate methods would intersect each other.
+const _LocScaleTDual = Union{
+    LocationScale{<:Dual, Continuous, <:TDist},
+    LocationScale{<:Real, Continuous, <:TDist{<:Dual}},
+}
+const _LocScaleT = LocationScale{<:Real, Continuous, <:TDist}
+
+Distributions.logcdf(d::TDist{<:Dual}, x::Real) = logcdf_ad_safe(d, x)
+Distributions.logcdf(d::TDist, x::Dual) = logcdf_ad_safe(d, x)
+Distributions.logcdf(d::TDist{<:Dual}, x::Dual) = logcdf_ad_safe(d, x)
+Distributions.logccdf(d::TDist{<:Dual}, x::Real) = logccdf_ad_safe(d, x)
+Distributions.logccdf(d::TDist, x::Dual) = logccdf_ad_safe(d, x)
+Distributions.logccdf(d::TDist{<:Dual}, x::Dual) = logccdf_ad_safe(d, x)
+
+Distributions.logcdf(d::_LocScaleTDual, x::Real) = logcdf_ad_safe(d, x)
+Distributions.logcdf(d::_LocScaleT, x::Dual) = logcdf_ad_safe(d, x)
+Distributions.logcdf(d::_LocScaleTDual, x::Dual) = logcdf_ad_safe(d, x)
+Distributions.logccdf(d::_LocScaleTDual, x::Real) = logccdf_ad_safe(d, x)
+Distributions.logccdf(d::_LocScaleT, x::Dual) = logccdf_ad_safe(d, x)
+Distributions.logccdf(d::_LocScaleTDual, x::Dual) = logccdf_ad_safe(d, x)
 
 end
