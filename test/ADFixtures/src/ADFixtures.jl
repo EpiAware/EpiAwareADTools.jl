@@ -4,10 +4,11 @@
 Shared AD gradient scenarios and backend metadata for EpiAwareADTools. Used by
 `test/ad/runtests.jl`. The scenarios differentiate the AD-safe hooks
 (`cdf_ad_safe`, `logcdf_ad_safe`, `ccdf_ad_safe`, `logccdf_ad_safe`,
-`pdf_ad_safe`) and the internal `_gamma_cdf`/`_beta_cdf` directly with respect
-to a Gamma's shape/scale or a Beta's two shape parameters (and, for the
-internal functions, the evaluation point), across the ForwardDiff /
-ReverseDiff / Enzyme / Mooncake backend matrix. The hook methods the
+`pdf_ad_safe`) and the internal `_gamma_cdf`/`_beta_cdf`/`_t_cdf` directly with
+respect to a Gamma's shape/scale, a Beta's two shape parameters, or a
+Student-t's degrees of freedom and location/scale (and, for the internal
+functions, the evaluation point), across the ForwardDiff / ReverseDiff /
+Enzyme / Mooncake backend matrix. The hook methods the
 `SurvivalDistributions` extension adds are covered the same way, differentiated
 through a `GeneralizedGamma`'s three parameters. A stock `logpdf(Gamma)`
 scenario pinned at `shape == 1` covers the `xlogy`/`xlog1py` Mooncake rules.
@@ -24,9 +25,9 @@ module ADFixtures
 __precompile__(false)
 
 using EpiAwareADTools
-using EpiAwareADTools: _gamma_cdf, _beta_cdf
+using EpiAwareADTools: _gamma_cdf, _beta_cdf, _t_cdf
 using Distributions: Distributions, Gamma, Beta, LogNormal, Weibull,
-    Exponential, Normal, truncated, logcdf, logpdf, quantile
+    Exponential, Normal, TDist, truncated, logcdf, logpdf, quantile
 # Loads `EpiAwareADToolsSurvivalDistributionsExt`, whose GeneralizedGamma hook
 # methods the survival scenarios below differentiate.
 import SurvivalDistributions as SD
@@ -226,6 +227,75 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
         "_beta_cdf direct",
         (θ, _obs) -> _beta_cdf(θ[1], θ[2], θ[3]),
         [1.7, 2.3, 0.85], (Constant(obs_beta),)
+    )
+
+    # Student-t (EpiAwareADTools#80). `_t_cdf` composes over `_beta_cdf`
+    # rather than carrying rules of its own, so these sweep the whole matrix
+    # to confirm the inherited coverage is real. `obs_t` straddles the sign
+    # branch and includes the `x == 0` guard, where the beta argument sits at
+    # 1 and the composition alone would return a zero x-partial.
+    obs_t = [-3.0, -0.7, 0.0, 0.7, 3.0]
+
+    _push!(
+        "cdf_ad_safe TDist",
+        (θ, obs) -> sum(x -> cdf_ad_safe(TDist(θ[1]), x), obs),
+        [5.0], (Constant(obs_t),)
+    )
+    _push!(
+        "logcdf_ad_safe TDist",
+        (θ, obs) -> sum(x -> logcdf_ad_safe(TDist(θ[1]), x), obs),
+        [5.0], (Constant(obs_t),)
+    )
+    _push!(
+        "ccdf_ad_safe TDist",
+        (θ, obs) -> sum(x -> ccdf_ad_safe(TDist(θ[1]), x), obs),
+        [5.0], (Constant(obs_t),)
+    )
+    _push!(
+        "logccdf_ad_safe TDist",
+        (θ, obs) -> sum(x -> logccdf_ad_safe(TDist(θ[1]), x), obs),
+        [5.0], (Constant(obs_t),)
+    )
+
+    # The location-scale wrapper `μ + σ * TDist(ν)`, differentiated in all
+    # three parameters at once: this is the type the issue's own call site
+    # builds, and the one whose stock `logcdf` promotes an untouched `ν` to
+    # the AD type on the way into `beta_inc`.
+    _push!(
+        "cdf_ad_safe location-scale TDist",
+        (θ, obs) -> sum(
+            x -> cdf_ad_safe(θ[1] + θ[2] * TDist(θ[3]), x), obs
+        ),
+        [0.3, 1.4, 5.0], (Constant(obs_t),)
+    )
+    _push!(
+        "logcdf_ad_safe location-scale TDist",
+        (θ, obs) -> sum(
+            x -> logcdf_ad_safe(θ[1] + θ[2] * TDist(θ[3]), x), obs
+        ),
+        [0.3, 1.4, 5.0], (Constant(obs_t),)
+    )
+    _push!(
+        "ccdf_ad_safe location-scale TDist",
+        (θ, obs) -> sum(
+            x -> ccdf_ad_safe(θ[1] + θ[2] * TDist(θ[3]), x), obs
+        ),
+        [0.3, 1.4, 5.0], (Constant(obs_t),)
+    )
+    _push!(
+        "logccdf_ad_safe location-scale TDist",
+        (θ, obs) -> sum(
+            x -> logccdf_ad_safe(θ[1] + θ[2] * TDist(θ[3]), x), obs
+        ),
+        [0.3, 1.4, 5.0], (Constant(obs_t),)
+    )
+
+    # The internal `_t_cdf(ν, x)` differentiated in both arguments, on the
+    # negative branch where the small tail is returned directly.
+    _push!(
+        "_t_cdf direct",
+        (θ, _obs) -> _t_cdf(θ[1], θ[2]),
+        [4.3, -1.6], (Constant(obs_t),)
     )
 
     # LogNormal/Weibull support is (0, ∞); `obs_below_support` leads with a
