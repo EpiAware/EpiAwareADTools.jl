@@ -115,7 +115,7 @@ end
 
     # Implements the univariate interface without subtyping
     # `UnivariateDistribution`, and its `params` round-trips through its
-    # positional constructor (EpiAwareADTools#83).
+    # positional constructor.
     struct DuckLeaf{T <: Real}
         θ::T
     end

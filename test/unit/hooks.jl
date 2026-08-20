@@ -206,7 +206,7 @@ end
 
     # A leaf that implements the univariate interface through the
     # Distributions.jl generic functions without subtyping
-    # `UnivariateDistribution` (EpiAwareADTools#81, #83).
+    # `UnivariateDistribution`.
     struct DuckExponential{T <: Real}
         θ::T
     end

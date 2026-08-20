@@ -4,14 +4,14 @@
 # differentiable in its shape/scale. A wrapper package adds methods for its own
 # component types whose stock evaluation is not AD-safe.
 #
-# The generic method carries no type bound on `dist` (EpiAwareADTools#81, #83).
-# A leaf that implements the univariate interface by adding methods to the
-# `Distributions` generic functions, without subtyping `UnivariateDistribution`,
-# is evaluated the same way. The bound is dropped rather than replaced by a
-# `hasmethod`/`applicable` gate: the fallback body is exactly the generic call,
-# so a type that does not implement it already fails with a `MethodError`
-# naming the missing method (`cdf(::Foo, ::Float64)`), which is the message a
-# gate would have to reproduce.
+# The generic method carries no type bound on `dist`. A leaf that implements
+# the univariate interface by adding methods to the `Distributions` generic
+# functions, without subtyping `UnivariateDistribution`, is evaluated the same
+# way. The bound is dropped rather than replaced by a `hasmethod`/`applicable`
+# gate: the fallback body is exactly the generic call, so a type that does not
+# implement it already fails with a `MethodError` naming the missing method
+# (`cdf(::Foo, ::Float64)`), which is the message a gate would have to
+# reproduce.
 #
 # Upstream target: the whole family exists because `Distributions.cdf`/`logcdf`
 # for `Gamma` route through `SpecialFunctions.gamma_inc` (and StatsFuns'
