@@ -61,6 +61,10 @@ listed in a `[deps]` section.
   relying on someone else's dependency graph.
   A package that needs the rules should load it itself, for effect if not for
   names, alongside `EpiAwareADTools`.
+- `EpiAwareADTools` counts too, since an extension of it cannot load before it
+  does.
+  A test that loads only the triggers gets Mooncake's derived rule and the
+  wrong gradient (#88).
 
 `ComposedDistributions` and `DistributionsInference` both do this, and both
 keep a `shape == 1` gradient scenario in their AD matrices as the regression
