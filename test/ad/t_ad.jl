@@ -112,7 +112,7 @@ end
     @test isapprox(gk, refk; rtol = 1.0e-8, atol = 1.0e-10)
 end
 
-@testitem "ReverseDiff differentiates _t_cdf through the _beta_cdf rule" tags = [
+@testitem "ReverseDiff inherits _t_cdf via the _beta_cdf rule" tags = [
     :ad, :reversediff,
 ] begin
     # `_t_cdf` is a composition over `_beta_cdf`, not a primitive of its own,
@@ -139,7 +139,7 @@ end
     end
 end
 
-@testitem "Mooncake differentiates _t_cdf through the _beta_cdf rule" tags = [
+@testitem "Mooncake inherits _t_cdf via the _beta_cdf rule" tags = [
     :ad, :mooncake, :mooncake_reverse,
 ] begin
     using ADTypes: AutoForwardDiff, AutoMooncake, AutoMooncakeForward
@@ -160,7 +160,7 @@ end
     end
 end
 
-@testitem "Enzyme differentiates _t_cdf through the _beta_cdf rule" tags = [
+@testitem "Enzyme inherits _t_cdf via the _beta_cdf rule" tags = [
     :ad, :enzyme, :enzyme_reverse,
 ] begin
     using ADTypes: AutoEnzyme, AutoForwardDiff

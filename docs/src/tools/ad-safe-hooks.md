@@ -41,6 +41,44 @@ db = Beta(2.0, 1.0)
 cdf_ad_safe(db, 0.3), logccdf_ad_safe(db, 0.3)
 ```
 
+## [Student-t](@id t-hooks)
+
+A Student-t CDF is the regularised incomplete beta at `ν / (ν + x^2)`, so
+`logcdf(::TDist)` reaches `beta_inc` through `StatsFuns.tdistlogcdf` and
+inherits the `Beta` problem above.
+It bites earlier than the `Gamma` and `Beta` cases, because `truncated`
+normalises eagerly: `truncated(TDist(ν), l, u)` calls `logcdf` at construction,
+before any density is evaluated, so a truncated t could not be built at all
+under AD (EpiAwareADTools#80).
+`tdistlogcdf` is typed `(ν::T, x::T)`, so it promotes an untouched degrees of
+freedom to the AD type and the break lands even when only a location and scale
+are being differentiated.
+
+The `TDist` methods route through the internal `_t_cdf` family, which composes
+over the [beta-CDF derivative](@ref beta-cdf) rather than carrying rules of its
+own, and there are matching methods for the location-scale wrapper
+`μ + σ * TDist(ν)`.
+
+```@example ad-safe-hooks
+dt = 0.3 + 1.4 * TDist(5.0)
+cdf_ad_safe(dt, 1.0), logccdf_ad_safe(dt, 1.0)
+```
+
+Loading `ForwardDiff` additionally claims `Distributions.logcdf`/`logccdf` on
+`Dual` arguments for `TDist`, the same way the extension already does for
+`Gamma` and `Beta`, so `truncated` builds and a gradient flows straight through
+the stock call.
+The wrapper needs no methods of its own there: the stock affine `logcdf`
+standardises the evaluation point and delegates to the inner t, so a `Dual`
+location or scale arrives as a `Dual` point and a `Dual` degrees of freedom as
+a `TDist{<:Dual}`.
+The other backends never surface a wrapper type to the primal computation, so
+they reach the same machinery through the hooks instead.
+
+!!! note "Far tail"
+    `logcdf_ad_safe` and `logccdf_ad_safe` on a Student-t always evaluate the smaller of the two tails and never reconstruct it as `1 - F`.
+    At `ν = 5` and `x = -1e8` the value agrees with the incomplete beta's own small-argument asymptote to nine significant figures, where the stock evaluator has already lost all but the first.
+
 ## Extending the hooks
 
 A wrapper package adds a method for its own component type.

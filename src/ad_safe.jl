@@ -11,6 +11,15 @@
 # once a Gamma CDF differentiable in its parameters ships upstream and wrapper
 # packages can call `cdf`/`logcdf` directly.
 #
+# The `TDist` methods (and those for `TLocationScale`, a t given a location
+# and scale) are the same story one composition further out: a Student-t CDF
+# is a regularised incomplete beta, so `Distributions.logcdf(::TDist)` reaches
+# `beta_inc` through `StatsFuns.tdistlogcdf` and breaks the same way. They
+# route through `_t_cdf` and its companions, which compose over `_beta_cdf`
+# (EpiAwareADTools#80). `tdistlogcdf` is typed `(ν::T, x::T)`, so it promotes
+# an untouched degrees of freedom to the AD type: the break lands even when
+# only the location and scale are differentiated.
+#
 # The `LogNormal`/`Weibull` methods are a narrower case: their stock
 # evaluators are already differentiable in shape/scale everywhere *inside*
 # the support, so no analytic replacement is needed. Below the support
@@ -58,6 +67,16 @@ function logcdf_ad_safe(dist::Beta, u::Real)
     return log(_beta_cdf(dist.α, dist.β, u))
 end
 
+function logcdf_ad_safe(dist::TDist, u::Real)
+    return _t_logcdf(dist.ν, u)
+end
+
+function logcdf_ad_safe(dist::TLocationScale, u::Real)
+    z = _t_standardise(dist, u)
+    primal(dist.σ) > 0 && return _t_logcdf(dist.ρ.ν, z)
+    return _t_logccdf(dist.ρ.ν, z)
+end
+
 function logcdf_ad_safe(dist::LogNormal, u::Real)
     u <= 0 && return oftype(float(u), -Inf)
     return logcdf(dist, u)
@@ -98,6 +117,16 @@ end
 
 function cdf_ad_safe(dist::Beta, u::Real)
     return _beta_cdf(dist.α, dist.β, u)
+end
+
+function cdf_ad_safe(dist::TDist, u::Real)
+    return _t_cdf(dist.ν, u)
+end
+
+function cdf_ad_safe(dist::TLocationScale, u::Real)
+    z = _t_standardise(dist, u)
+    primal(dist.σ) > 0 && return _t_cdf(dist.ρ.ν, z)
+    return _t_ccdf(dist.ρ.ν, z)
 end
 
 function cdf_ad_safe(dist::LogNormal, u::Real)
@@ -143,6 +172,16 @@ function logccdf_ad_safe(dist::Beta, u::Real)
     return log1p(-_beta_cdf(dist.α, dist.β, u))
 end
 
+function logccdf_ad_safe(dist::TDist, u::Real)
+    return _t_logccdf(dist.ν, u)
+end
+
+function logccdf_ad_safe(dist::TLocationScale, u::Real)
+    z = _t_standardise(dist, u)
+    primal(dist.σ) > 0 && return _t_logccdf(dist.ρ.ν, z)
+    return _t_logcdf(dist.ρ.ν, z)
+end
+
 function logccdf_ad_safe(dist::LogNormal, u::Real)
     u <= 0 && return zero(float(u))
     return logccdf(dist, u)
@@ -178,6 +217,16 @@ end
 
 function ccdf_ad_safe(dist::Beta, u::Real)
     return 1 - _beta_cdf(dist.α, dist.β, u)
+end
+
+function ccdf_ad_safe(dist::TDist, u::Real)
+    return _t_ccdf(dist.ν, u)
+end
+
+function ccdf_ad_safe(dist::TLocationScale, u::Real)
+    z = _t_standardise(dist, u)
+    primal(dist.σ) > 0 && return _t_ccdf(dist.ρ.ν, z)
+    return _t_cdf(dist.ρ.ν, z)
 end
 
 function ccdf_ad_safe(dist::LogNormal, u::Real)
