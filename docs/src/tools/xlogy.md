@@ -72,5 +72,5 @@ A rule for `xlogy`/`xlog1py` in `Mooncake.jl` itself.
 The report
 ([issue #1241](https://github.com/chalk-lab/Mooncake.jl/issues/1241)) was
 withdrawn as bot-filed rather than fixed, so the gap is still open in Mooncake
-0.5.45 and the report awaits a re-file.
+0.5.46 and the report awaits a re-file.
 This extension is deleted once Mooncake registers its own primitives.

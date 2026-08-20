@@ -1,6 +1,6 @@
-# Guard for the docs Extensions nav group (EpiAwareADTools#68). The managed
-# `docs/pages.jl` writes one Extensions entry per `[extensions]` declaration
-# in Project.toml, pointing at a page under `docs/src/extensions/`, and
+# Guard for the docs Extensions nav group. The managed `docs/pages.jl`
+# writes one Extensions entry per `[extensions]` declaration in
+# Project.toml, pointing at a page under `docs/src/extensions/`, and
 # Documenter silently drops any entry whose page is missing — a whole group
 # can vanish from the built site with a green docs run. These items pin the
 # pages to the nav so a missing or renamed file fails here instead.

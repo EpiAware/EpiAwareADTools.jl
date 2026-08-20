@@ -52,5 +52,5 @@ An older resolve would register primitives with no rule behind them.
 ## Upstream target
 
 A rule for `xlogy` and `xlog1py` in `Mooncake.jl` itself.
-The report ([issue #1241](https://github.com/chalk-lab/Mooncake.jl/issues/1241)) was withdrawn as bot-filed rather than fixed, so the gap is still open in Mooncake 0.5.45 and the report awaits a re-file.
+The report ([issue #1241](https://github.com/chalk-lab/Mooncake.jl/issues/1241)) was withdrawn as bot-filed rather than fixed, so the gap is still open in Mooncake 0.5.46 and the report awaits a re-file.
 The extension is deleted once Mooncake registers its own primitives.
