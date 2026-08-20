@@ -31,7 +31,7 @@ frozen_midpoint(0.0, 1.0)
 A struct's own constructor is itself callable, so wrapping it the same way —
 `nondifferentiable(QuadratureGrid)` — holds construction out of
 differentiation too, once the struct's own type has a `primal` method (the
-same pattern `primal_distribution` follows for `UnivariateDistribution`).
+same pattern `primal_distribution` follows for a distribution's parameters).
 There is deliberately no generic reflection-based `primal` fallback for an
 arbitrary struct: `isstructtype` is `true` for `Dict`, `Module` and every
 concrete function type — a closure, or `typeof(sin)` — as well as a user's

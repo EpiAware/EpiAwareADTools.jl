@@ -4,6 +4,15 @@
 # differentiable in its shape/scale. A wrapper package adds methods for its own
 # component types whose stock evaluation is not AD-safe.
 #
+# The generic method carries no type bound on `dist` (EpiAwareADTools#81, #83).
+# A leaf that implements the univariate interface by adding methods to the
+# `Distributions` generic functions, without subtyping `UnivariateDistribution`,
+# is evaluated the same way. The bound is dropped rather than replaced by a
+# `hasmethod`/`applicable` gate: the fallback body is exactly the generic call,
+# so a type that does not implement it already fails with a `MethodError`
+# naming the missing method (`cdf(::Foo, ::Float64)`), which is the message a
+# gate would have to reproduce.
+#
 # Upstream target: the whole family exists because `Distributions.cdf`/`logcdf`
 # for `Gamma` route through `SpecialFunctions.gamma_inc` (and StatsFuns'
 # `_gammalogcdf`/`_gammalogccdf`), which carry no shape derivative — the same
@@ -36,7 +45,9 @@ An extension point: a downstream package adds methods for component types whose
 stock `logcdf` is not AD-safe, the same pattern as [`pdf_ad_safe`](@ref).
 
 # Arguments
-- `dist`: the distribution whose log CDF is evaluated.
+- `dist`: the distribution whose log CDF is evaluated. The fallback carries
+  no type bound, so a leaf implementing the `Distributions` generic without
+  subtyping `UnivariateDistribution` is accepted.
 - `u`: the evaluation point.
 
 # Examples
@@ -46,7 +57,7 @@ using EpiAwareADTools, Distributions
 logcdf_ad_safe(Gamma(2.0, 1.0), 3.0)
 ```
 """
-logcdf_ad_safe(dist::UnivariateDistribution, u::Real) = logcdf(dist, u)
+logcdf_ad_safe(dist, u::Real) = logcdf(dist, u)
 
 function logcdf_ad_safe(dist::Gamma, u::Real)
     u <= 0 && return oftype(float(u), -Inf)
@@ -80,7 +91,9 @@ An extension point: a wrapper package adds methods the same way as
 [`pdf_ad_safe`](@ref).
 
 # Arguments
-- `dist`: the distribution whose CDF is evaluated.
+- `dist`: the distribution whose CDF is evaluated. The fallback carries no
+  type bound, so a leaf implementing the `Distributions` generic without
+  subtyping `UnivariateDistribution` is accepted.
 - `u`: the evaluation point.
 
 # Examples
@@ -90,7 +103,7 @@ using EpiAwareADTools, Distributions
 cdf_ad_safe(Gamma(2.0, 1.0), 3.0)
 ```
 """
-cdf_ad_safe(dist::UnivariateDistribution, u::Real) = cdf(dist, u)
+cdf_ad_safe(dist, u::Real) = cdf(dist, u)
 
 function cdf_ad_safe(dist::Gamma, u::Real)
     return _gamma_cdf(shape(dist), scale(dist), u)
@@ -121,7 +134,9 @@ An extension point: a downstream package adds methods for its own component
 types, the same pattern as [`pdf_ad_safe`](@ref).
 
 # Arguments
-- `dist`: the distribution whose log survival is evaluated.
+- `dist`: the distribution whose log survival is evaluated. The fallback
+  carries no type bound, so a leaf implementing the `Distributions` generic
+  without subtyping `UnivariateDistribution` is accepted.
 - `u`: the evaluation point.
 
 # Examples
@@ -131,7 +146,7 @@ using EpiAwareADTools, Distributions
 logccdf_ad_safe(Gamma(2.0, 1.0), 3.0)
 ```
 """
-logccdf_ad_safe(dist::UnivariateDistribution, u::Real) = logccdf(dist, u)
+logccdf_ad_safe(dist, u::Real) = logccdf(dist, u)
 
 function logccdf_ad_safe(dist::Gamma, u::Real)
     u <= 0 && return zero(float(u))
@@ -160,7 +175,9 @@ An extension point: a downstream package adds methods for its own component
 types, the same pattern as [`pdf_ad_safe`](@ref).
 
 # Arguments
-- `dist`: the distribution whose survival is evaluated.
+- `dist`: the distribution whose survival is evaluated. The fallback carries
+  no type bound, so a leaf implementing the `Distributions` generic without
+  subtyping `UnivariateDistribution` is accepted.
 - `u`: the evaluation point.
 
 # Examples
@@ -170,7 +187,7 @@ using EpiAwareADTools, Distributions
 ccdf_ad_safe(Gamma(2.0, 1.0), 3.0)
 ```
 """
-ccdf_ad_safe(dist::UnivariateDistribution, u::Real) = ccdf(dist, u)
+ccdf_ad_safe(dist, u::Real) = ccdf(dist, u)
 
 function ccdf_ad_safe(dist::Gamma, u::Real)
     return 1 - _gamma_cdf(shape(dist), scale(dist), u)
@@ -198,7 +215,9 @@ An extension point: a wrapper package hooks it so its modified components stay
 differentiable inside the quadrature, the same pattern as [`ccdf_ad_safe`](@ref).
 
 # Arguments
-- `dist`: the component distribution whose density is evaluated.
+- `dist`: the component distribution whose density is evaluated. The fallback
+  carries no type bound, so a leaf implementing the `Distributions` generic
+  without subtyping `UnivariateDistribution` is accepted.
 - `t`: the evaluation point.
 
 # Examples
@@ -208,7 +227,7 @@ using EpiAwareADTools, Distributions
 pdf_ad_safe(Gamma(2.0, 1.0), 3.0)
 ```
 """
-pdf_ad_safe(dist::UnivariateDistribution, t::Real) = pdf(dist, t)
+pdf_ad_safe(dist, t::Real) = pdf(dist, t)
 
 # The stock `pdf(::Beta)` routes through `StatsFuns.betapdf`, which computes
 # `exp(xlogy(α-1, x) + xlog1py(β-1, -x) - logbeta(α, β))`. Enzyme's own rule
