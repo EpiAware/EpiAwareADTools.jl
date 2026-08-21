@@ -88,6 +88,11 @@ end
     using Distributions: TDist, truncated, logpdf
     using FiniteDifferences: FiniteDifferences, central_fdm
     using ForwardDiff: ForwardDiff
+    # Loaded for effect: the `Dual` methods come from the package, and
+    # TestItemRunner runs items in `Dict` order rather than file order, so
+    # an item that leaves the load to a neighbour asserts nothing on the
+    # runs where it goes first (#88).
+    using EpiAwareADTools: EpiAwareADTools
 
     fdm = central_fdm(5, 1)
 

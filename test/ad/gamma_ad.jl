@@ -115,6 +115,11 @@ end
     using DifferentiationInterface: gradient
     using Enzyme: Enzyme
     using SpecialFunctions: gamma, digamma
+    # Loaded for effect: the rule lives in an extension, so it exists only
+    # once the package is loaded alongside its triggers. Leaving that to
+    # whichever item runs first asserts nothing on the runs where this one
+    # goes first (#88).
+    using EpiAwareADTools: EpiAwareADTools
 
     f(v) = gamma(v[1])
     for x in (0.7, 1.5, 2.0, 3.4, 7.0)

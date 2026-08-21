@@ -138,6 +138,11 @@ task test-ad-backend TAG=enzyme_reverse  # a single backend
 Each scenario carries a ForwardDiff reference gradient the other backends are checked against.
 When you add or change a hook or a derivative rule, add a matching scenario to `test/ADFixtures/src/ADFixtures.jl` so the sweep covers it.
 
+Every `@testitem` under `test/ad/` must load `EpiAwareADTools` itself, even when it names nothing from the package.
+TestItemRunner runs all items in one process and discovers them in `Dict` order over absolute file paths, so an item that leaves the load to a neighbour tests the unlifted upstream method whenever it happens to run first.
+That is how `test/ad/xlogy_ad.jl` turned 30 assertions red on an unrelated pull request.
+`test/unit/ad_item_self_sufficiency.jl` checks the rule, and accepts a `setup` snippet that reaches the package in place of the item's own `using`.
+
 ## Style guide
 
 This project follows the [SciML style guide](https://github.com/SciML/SciMLStyle).
