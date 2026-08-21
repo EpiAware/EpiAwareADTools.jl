@@ -62,6 +62,10 @@ end
 ] begin
     using ADTypes: AutoForwardDiff
     using DifferentiationInterface: gradient
+    # `DifferentiationInterface` reaches the backend through its own
+    # extension, so the backend has to be loaded here rather than left to
+    # whichever item happens to run first (#88).
+    using ForwardDiff: ForwardDiff
     using EpiAwareADTools: primal
 
     g(v) = 2 * v[1] + 3 * primal(v[1])
@@ -73,6 +77,9 @@ end
 ] begin
     using ADTypes: AutoReverseDiff
     using DifferentiationInterface: gradient
+    # As above: the backend is a trigger for `DifferentiationInterface`'s
+    # extension, so this item loads it for itself (#88).
+    using ReverseDiff: ReverseDiff
     using EpiAwareADTools: primal
 
     g(v) = 2 * v[1] + 3 * primal(v[1])
