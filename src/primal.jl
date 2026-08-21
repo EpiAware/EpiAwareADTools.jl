@@ -70,6 +70,11 @@ whose `params` does not match its constructor raises an `ArgumentError`
 naming the type rather than a `MethodError` naming a constructor the caller
 never wrote.
 
+There is no type bound on `d`, so a leaf implementing the univariate interface
+without subtyping `UnivariateDistribution` rebuilds too, provided its `params`
+round-trips through its own constructor. One that defines no
+`Distributions.params` at all raises the same kind of `ArgumentError`.
+
 # Arguments
 - `d`: the univariate distribution to rebuild from primal parameters.
 
@@ -81,8 +86,9 @@ primal_distribution(Gamma(2.0, 1.0))
 primal_distribution(truncated(Gamma(2.0, 1.0), 0.0, 10.0))
 ```
 """
-function primal_distribution(d::UnivariateDistribution)
+function primal_distribution(d)
     D = Base.typename(typeof(d)).wrapper
+    applicable(params, d) || _no_params(d)
     p = map(primal, params(d))
     hasmethod(D, typeof(p)) || _unreconstructable(d, D)
     return D(p...)
@@ -106,6 +112,16 @@ function primal_distribution(d::Distributions.Censored)
 end
 
 # Out of line so the rebuild path stays a plain dispatch.
+@noinline function _no_params(d)
+    throw(
+        ArgumentError(
+            "primal_distribution cannot rebuild a $(typeof(d)): it has " *
+                "no `Distributions.params` method. Define `params` for this " *
+                "type, or a `primal_distribution` method for it."
+        )
+    )
+end
+
 @noinline function _unreconstructable(d, D)
     throw(
         ArgumentError(

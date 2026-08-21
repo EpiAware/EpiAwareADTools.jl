@@ -199,3 +199,35 @@ end
         @test params(p) == params(d)
     end
 end
+
+@testitem "hooks accept a leaf that is not a UnivariateDistribution" begin
+    using EpiAwareADTools
+    using Distributions
+
+    # A leaf that implements the univariate interface through the
+    # Distributions.jl generic functions without subtyping
+    # `UnivariateDistribution`.
+    struct DuckExponential{T <: Real}
+        θ::T
+    end
+    Distributions.cdf(d::DuckExponential, x::Real) = cdf(Exponential(d.θ), x)
+    Distributions.ccdf(d::DuckExponential, x::Real) = ccdf(Exponential(d.θ), x)
+    Distributions.pdf(d::DuckExponential, x::Real) = pdf(Exponential(d.θ), x)
+    function Distributions.logcdf(d::DuckExponential, x::Real)
+        return logcdf(Exponential(d.θ), x)
+    end
+    function Distributions.logccdf(d::DuckExponential, x::Real)
+        return logccdf(Exponential(d.θ), x)
+    end
+
+    d = DuckExponential(1.5)
+    ref = Exponential(1.5)
+    @test !(d isa UnivariateDistribution)
+    for x in (0.3, 1.5, 4.0)
+        @test cdf_ad_safe(d, x) == cdf(ref, x)
+        @test logcdf_ad_safe(d, x) == logcdf(ref, x)
+        @test ccdf_ad_safe(d, x) == ccdf(ref, x)
+        @test logccdf_ad_safe(d, x) == logccdf(ref, x)
+        @test pdf_ad_safe(d, x) == pdf(ref, x)
+    end
+end
