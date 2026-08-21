@@ -290,3 +290,135 @@ end
     @test Ω_neg == 0.0
     @test pb_neg(1.0) == (NoTangent(), 0.0, 0.0, 0.0)
 end
+
+# Accuracy of `_grad_p_a_series` at large shape (EpiAwareADTools#67). The
+# items above bound the series against finite differences of `gamma_inc`,
+# which is itself only good to ~1e-10, and stop at shape 50. These pin the
+# whole shape range against a BigFloat evaluation instead, so the accuracy
+# the series actually delivers is recorded rather than assumed.
+
+@testsnippet GammaSeriesReference begin
+    using EpiAwareADTools: _grad_p_a_series
+
+    # Ground truth: the same series at 512 bits, where the cancellation that
+    # costs Float64 several of its 16 digits costs a few of 154. `rtol` and
+    # `maxiter` are set explicitly so the reference is a no-expense-spared
+    # evaluation independent of whatever defaults the Float64 path carries.
+    # `_grad_p_a_series BigFloat reference is independent` pins it against a
+    # construction sharing none of the differentiated algebra.
+    ref_grad_p_a(a::Real, z::Real) = setprecision(BigFloat, 512) do
+        _grad_p_a_series(
+            BigFloat(a), BigFloat(z);
+            rtol = BigFloat(1.0e-50), maxiter = 2_000_000
+        )
+    end
+
+    # Relative error of the default Float64 path against that reference.
+    function series_relerr(a::Real, z::Real)
+        truth = ref_grad_p_a(a, z)
+        return Float64(abs(_grad_p_a_series(a, z) - truth) / abs(truth))
+    end
+end
+
+@testitem "_grad_p_a_series BigFloat reference is independent" tags = [
+    :ad, :forwarddiff,
+] setup = [GammaSeriesReference] begin
+    # The accuracy item below measures `_grad_p_a_series` against itself in
+    # BigFloat, which is only a fair ground truth if the BigFloat evaluation
+    # is limited by nothing but its own precision. Check it against a central
+    # difference of the Tricomi series for `P(a, z)` itself: that shares the
+    # series but none of the term-by-term differentiation, the digamma
+    # recurrence or the final subtraction, so agreement rules out an error in
+    # the differentiated form as well as in the arithmetic.
+    using SpecialFunctions: loggamma
+    using EpiAwareADTools: _grad_p_a_series
+
+    # `P(a, z)` from the Tricomi series alone. Every term is positive, so
+    # this is accurate to working precision with no cancellation at all.
+    function tricomi_P(a::BigFloat, z::BigFloat)
+        term = exp(a * log(z) - z - loggamma(a + 1))
+        P = term
+        for n in 1:2_000_000
+            term *= z / (a + n)
+            P += term
+            term <= eps(BigFloat) * P && break
+        end
+        return P
+    end
+
+    for (a, z) in [(2.3, 1.9), (50.0, 49.5), (1.0e5, 101_581.0)]
+        got, truth = setprecision(BigFloat, 512) do
+            A, Z = BigFloat(a), BigFloat(z)
+            h = A * BigFloat(2)^-60
+            fd = (tricomi_P(A + h, Z) - tricomi_P(A - h, Z)) / (2h)
+            series = _grad_p_a_series(
+                A, Z; rtol = BigFloat(1.0e-50), maxiter = 2_000_000
+            )
+            (series, fd)
+        end
+        @test abs(got - truth) <= 1.0e-25 * abs(truth)
+    end
+end
+
+@testitem "_grad_p_a_series accuracy across shape" tags = [
+    :ad, :forwarddiff,
+] setup = [GammaSeriesReference] begin
+    # Moderate shapes, where the series is limited only by rounding.
+    for (a, z) in [
+            (0.1, 0.5), (0.5, 5.0), (1.0, 5.0), (2.3, 1.0),
+            (10.0, 9.5), (10.0, 25.0), (50.0, 5.0), (50.0, 49.5),
+        ]
+        @test series_relerr(a, z) <= 1.0e-10
+    end
+
+    # Large shapes, probed at `z = k + t√k` so `t` fixes the survival
+    # regardless of `k`: `t = 0` sits at the median, `t = 3` at `Q ≈ 1e-3`
+    # and `t = 5` at `Q ≈ 3e-7`. Accuracy falls off in both `k` and `t` —
+    # the summands carry a factor `log(z)` that the answer does not, so the
+    # final subtraction cancels away roughly `0.15/Q` of the working
+    # precision, and the rounding of the `Θ(√k)` terms accumulates on top.
+    # The bounds below are the measured error surface with two decades of
+    # headroom, not a target: they exist so the next change to this function
+    # inherits a measurement.
+    for (k, t, bound) in [
+            (1.0e3, 0.0, 1.0e-11), (1.0e3, 3.0, 1.0e-9),
+            (1.0e3, 5.0, 1.0e-6),
+            (1.0e5, 0.0, 1.0e-10), (1.0e5, 3.0, 1.0e-8),
+            (1.0e5, 5.0, 1.0e-4),
+            (1.0e7, 0.0, 1.0e-8), (1.0e7, 3.0, 1.0e-5),
+            (1.0e7, 5.0, 1.0e-2),
+        ]
+        @test series_relerr(k, k + t * sqrt(k)) <= bound
+    end
+end
+
+@testitem "_gamma_logccdf shape partial at large shape" tags = [
+    :ad, :forwarddiff,
+] setup = [GammaSeriesReference] begin
+    # Where the series' shape-parameter error actually reaches a caller:
+    # `∂ log Q / ∂a` above the `√eps` switchover is `-∂P/∂a / Q`, so a
+    # relative error in the series lands undiluted in `dk`. Below the
+    # switchover `_dlogQ_da_tail_series` takes over and the error vanishes.
+    # The tail-series column is measured here too, because at these shapes
+    # it is the more accurate of the two well before the switchover fires —
+    # the evidence for widening that boundary (EpiAwareADTools#67).
+    using SpecialFunctions: gamma_inc
+    using EpiAwareADTools: _gamma_logccdf_value_and_partials,
+        _dlogQ_da_tail_series
+
+    for (k, t, quotient_bound) in [
+            (1.0e3, 5.0, 1.0e-6), (1.0e5, 3.0, 1.0e-8), (1.0e5, 5.0, 1.0e-4),
+        ]
+        z = k + t * sqrt(k)
+        truth = setprecision(BigFloat, 512) do
+            -ref_grad_p_a(k, z) / last(gamma_inc(BigFloat(k), BigFloat(z)))
+        end
+        _, dk, _, _ = _gamma_logccdf_value_and_partials(k, 1.0, z)
+        @test isfinite(dk) && dk > 0
+        @test abs(dk - Float64(truth)) <= quotient_bound * abs(truth)
+        # The unused branch, at the same point, is six or more orders of
+        # magnitude better.
+        tail = _dlogQ_da_tail_series(k, z)
+        @test abs(tail - Float64(truth)) <= 1.0e-11 * abs(truth)
+    end
+end

@@ -1,4 +1,40 @@
 @doc raw"""
+Term budget for [`_grad_p_a_series`](@ref), sized to the series rather
+than fixed.
+
+The terms `z^n / Γ(a + n + 1)` grow while `n < z - a` and decay after,
+by a factor `z / (a + n) ≈ 1 - m / z` at `m` terms past that peak, so
+the log of the term falls by about `m^2 / (2z)`. Converging to a
+relative `rtol` therefore takes about
+
+```math
+(z - a)_+ + \sqrt{2 z \log(1 / \mathrm{rtol})}
+```
+
+terms, which grows like `√a` along `z ≈ a`. Half again the decay
+estimate is carried as margin. The fixed 10,000 this replaces was
+exhausted above shape `~4e5` and truncated the sum silently, costing 5%
+relative accuracy at shape `1e6` and all of it by `1e7`
+(EpiAwareADTools#67).
+
+The floor keeps every shape below `~4e5` on exactly the iteration
+sequence it had before, so nothing in the reachable range moves. The
+ceiling bounds the worst case at a few milliseconds and binds only above
+shape `~4e8`. Non-finite inputs fall back to the floor rather than
+throwing on the `Int` conversion; the series' own `z <= 0` guard and the
+underflow of `term` handle the degenerate arguments themselves.
+"""
+function _grad_p_a_maxiter(a::Real, z::Real, rtol::Real)
+    peak = max(z - a, zero(z - a))
+    decay = sqrt(2 * z * max(-log(rtol), one(rtol)))
+    n = peak + 3 * decay / 2 + 50
+    isfinite(n) || return 10_000
+    n <= 10_000 && return 10_000
+    n >= 1_000_000 && return 1_000_000
+    return ceil(Int, n)
+end
+
+@doc raw"""
 Partial of the regularised lower incomplete gamma with respect to the
 shape parameter — the term `SpecialFunctions.gamma_inc` leaves as
 `@not_implemented` in its `ChainRule`. Computed by term-by-term
@@ -22,6 +58,38 @@ should eventually supply: SpecialFunctions.jl issue #531 (implement the
 shape-parameter partial for `gamma_inc` as a convergent series) tracks
 it. The helper is deleted once that rule lands.
 
+# Accuracy
+
+The two sums differ by far less than either is worth: `log(z) P` stays
+`O(log z)` while `∂P/∂a` falls away as `P` saturates, reaching `1e-8` by
+survival `Q ≈ 3e-7` at shape `1e5`. The closing subtraction therefore
+discards most of the working precision, and the rounding of the `Θ(√a)`
+terms accumulates on top of that. Measured against a 512-bit evaluation
+of the same series, the relative error is
+
+| shape `a` | `Q ≈ 0.5` | `Q ≈ 1e-3` | `Q ≈ 3e-7` |
+|---|---|---|---|
+| `1e3` | `4e-13` | `5e-11` | `5e-8` |
+| `1e5` | `8e-12` | `5e-10` | `2e-6` |
+| `1e7` | `8e-10` | `1e-7` | `1e-4` |
+
+Absolute accuracy holds throughout — `∂P/∂a` itself is `O(1e-8)` in the
+worst column — so a `_gamma_cdf` gradient is unaffected. The relative
+error matters only to [`_gamma_logccdf_value_and_partials`](@ref), which
+divides by `Q`, and only in the band above its `√eps` switchover — a
+shape whose coefficient of variation is under 3% (EpiAwareADTools#67).
+What is left is a property of this series rather than of the
+implementation, and a tighter loop cannot reach it. The cheap route to
+it is not a uniform (Temme) expansion but
+[`_dlogQ_da_tail_series`](@ref), which is already several orders of
+magnitude better than the quotient wherever `z - a` is large, well
+before the `√eps` switchover hands over to it.
+
+`maxiter` defaults to [`_grad_p_a_maxiter`](@ref) rather than a fixed
+count so the series always runs to its own convergence. A fixed 10,000
+silently truncated above shape `~4e5` — 5% relative error at shape `1e6`
+and complete loss by `1e7`, since the term count grows like `√a`.
+
 # References
 
 The series + digamma-recurrence form is Moore (1982), "Algorithm AS
@@ -33,7 +101,7 @@ shape derivative of the regularised lower incomplete gamma.
 """
 function _grad_p_a_series(
         a::Real, z::Real; rtol::Real = 1.0e-14,
-        maxiter::Int = 10_000
+        maxiter::Int = _grad_p_a_maxiter(a, z, rtol)
     )
     z <= 0 && return zero(a) * zero(z)
     log_term0 = a * log(z) - z - loggamma(a + 1)
