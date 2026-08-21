@@ -16,7 +16,9 @@ wrapper package overloads for its own component types; their `Gamma` methods
 route through an analytic gamma-CDF derivative that stands in for the
 differentiability `SpecialFunctions.gamma_inc` leaves unimplemented, and their
 `Beta` methods do the same for `SpecialFunctions.beta_inc`'s missing
-shape-parameter derivatives. [`nondifferentiable`](@ref) generalises
+shape-parameter derivatives. Their `TDist` methods, and those for a t's
+location-scale wrapper, compose over that same beta machinery.
+[`nondifferentiable`](@ref) generalises
 `primal`'s own discipline to an arbitrary user-supplied function: a
 deliberate, user-facing opt-out from differentiation, never a hidden default.
 [`logsumexp_stream`](@ref) is the shared
@@ -52,8 +54,8 @@ module EpiAwareADTools
 # using/import live in this file (kit #105); the extensions import the
 # package's own internals from here.
 using Distributions: Distributions, Gamma, Beta,
-    LogNormal, Weibull, Truncated, params, shape, scale, pdf, logpdf, cdf,
-    logcdf, ccdf, logccdf, truncated, censored
+    LogNormal, Weibull, TDist, LocationScale, Continuous, Truncated, params,
+    shape, scale, pdf, logpdf, cdf, logcdf, ccdf, logccdf, truncated, censored
 
 using SpecialFunctions: gamma_inc, loggamma, digamma, beta_inc, logbeta
 
@@ -85,6 +87,10 @@ include("gamma_ad.jl")
 # shape partials, the AD-safe `_beta_cdf`, and the shared value-and-partials
 # helper the per-backend extensions consume.
 include("beta_ad.jl")
+# Student-t CDF machinery (internal): `_t_cdf` and its log/survival
+# companions, composed over `_beta_cdf` so they inherit its per-backend rules
+# rather than carrying their own.
+include("t_ad.jl")
 # The AD-safe evaluation hooks wrapping cdf/logcdf/ccdf/logccdf/pdf.
 include("ad_safe.jl")
 # The user-facing differentiation opt-out: NonDifferentiable/nondifferentiable.

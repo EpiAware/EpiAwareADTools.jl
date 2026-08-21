@@ -8,6 +8,12 @@
 # Each item is mode-agnostic (it exercises both modes of the rules), so it is
 # tagged for a single canonical backend and runs once across the per-backend CI
 # jobs; the untagged `task test-ad` run executes every item.
+#
+# Both items load `EpiAwareADTools` for effect. The rules live in a package
+# extension, so they only exist once the package is loaded alongside its
+# trigger packages, and TestItemRunner runs items in `Dict` order rather than
+# file order. An item that leaves the load to a neighbour asserts nothing on
+# the runs where it happens to go first (#88).
 
 @testitem "xlogy/xlog1py pass Mooncake.TestUtils.test_rule" tags = [
     :ad, :mooncake, :mooncake_reverse,
@@ -16,6 +22,7 @@
     # this fails if the registration is absent or narrowed away from the
     # `Base.IEEEFloat` argument types; the finite-difference comparison then
     # fails if the derivative is wrong. `x == 0` is the case that matters.
+    using EpiAwareADTools: EpiAwareADTools
     using Random: MersenneTwister
     using Mooncake: Mooncake
     using LogExpFunctions: xlogy, xlog1py
@@ -43,6 +50,7 @@ end
     # the primal's `iszero(x)` branch and both modes return
     # `-digamma(1) = γ ≈ 0.5772` for the shape component instead of
     # `log(x / scale) - digamma(1)`.
+    using EpiAwareADTools: EpiAwareADTools
     using ADTypes: AutoMooncake, AutoMooncakeForward
     using DifferentiationInterface: gradient
     using Distributions: Gamma, logpdf

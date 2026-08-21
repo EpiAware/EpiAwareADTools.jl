@@ -93,6 +93,58 @@ end
     @test ccdf_ad_safe(d, 1.0) == 0.0
 end
 
+@testitem "hooks agree with Distributions on TDist" begin
+    using EpiAwareADTools
+    using Distributions: TDist, cdf, logcdf, ccdf, logccdf, pdf
+
+    for ν in (0.5, 2.5, 5.0, 30.0)
+        d = TDist(ν)
+        for x in (-4.0, -1.0, -0.25, 0.0, 0.25, 1.0, 4.0)
+            @test cdf_ad_safe(d, x) ≈ cdf(d, x)
+            @test logcdf_ad_safe(d, x) ≈ logcdf(d, x)
+            @test ccdf_ad_safe(d, x) ≈ ccdf(d, x)
+            @test logccdf_ad_safe(d, x) ≈ logccdf(d, x)
+            @test pdf_ad_safe(d, x) ≈ pdf(d, x)
+        end
+    end
+end
+
+@testitem "hooks agree with Distributions on a location-scale TDist" begin
+    using EpiAwareADTools
+    using Distributions: TDist, cdf, logcdf, ccdf, logccdf
+
+    # `μ + σ * TDist(ν)` is the wrapper an affine reparameterisation builds.
+    # A negative scale flips the CDF and survival, which the hooks follow the
+    # stock evaluator in handling.
+    for d in (0.3 + 1.4 * TDist(5.0), 0.3 + (-1.4) * TDist(5.0))
+        for x in (-4.0, -1.0, 0.3, 1.0, 4.0)
+            @test cdf_ad_safe(d, x) ≈ cdf(d, x)
+            @test logcdf_ad_safe(d, x) ≈ logcdf(d, x)
+            @test ccdf_ad_safe(d, x) ≈ ccdf(d, x)
+            @test logccdf_ad_safe(d, x) ≈ logccdf(d, x)
+        end
+    end
+end
+
+@testitem "logcdf_ad_safe preserves the Student-t far tail" begin
+    using EpiAwareADTools
+    using SpecialFunctions: logbeta
+    using Distributions: TDist
+
+    # The small tail is computed directly rather than as `1 - F`. Ground
+    # truth is the leading term of the incomplete beta as its argument goes to
+    # zero, `I_u(p, q) → u^p / (p B(p, q))`, which is independent of both this
+    # implementation and Distributions.jl; the stock evaluator reaches the
+    # same tail through the complementary branch and has lost most of its
+    # significant digits by `x = -1e8`.
+    asymptote(ν, x) = (ν / 2) * log(ν / x^2) - log(ν) - logbeta(ν / 2, 0.5)
+
+    for ν in (1.5, 5.0, 12.0), x in (1.0e4, 1.0e6, 1.0e8)
+        @test logcdf_ad_safe(TDist(ν), -x) ≈ asymptote(ν, x) rtol = 1.0e-8
+        @test logccdf_ad_safe(TDist(ν), x) ≈ asymptote(ν, x) rtol = 1.0e-8
+    end
+end
+
 @testitem "hooks agree with Distributions on LogNormal" begin
     using EpiAwareADTools
     using Distributions: LogNormal, cdf, logcdf, ccdf, logccdf, pdf

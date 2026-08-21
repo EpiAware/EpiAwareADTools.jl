@@ -5,7 +5,7 @@ using EpiAwareADTools: _gamma_cdf_value_and_partials,
     _gamma_logccdf_value_and_partials,
     _beta_cdf_value_and_partials, logcdf_ad_safe,
     logccdf_ad_safe
-using Distributions: Distributions, Gamma, Beta
+using Distributions: Distributions, Gamma, Beta, TDist
 using ForwardDiff: ForwardDiff, Dual, value, partials
 
 # Strip a ForwardDiff `Dual` to its primal value. Recurses through nested
@@ -185,5 +185,27 @@ Distributions.logcdf(d::Beta{<:Dual}, x::Dual) = logcdf_ad_safe(d, x)
 Distributions.logccdf(d::Beta{<:Dual}, x::Real) = logccdf_ad_safe(d, x)
 Distributions.logccdf(d::Beta, x::Dual) = logccdf_ad_safe(d, x)
 Distributions.logccdf(d::Beta{<:Dual}, x::Dual) = logccdf_ad_safe(d, x)
+
+# Same gap again for a Student-t, one composition further out
+# (EpiAwareADTools#80): `Distributions.logcdf(::TDist)` reaches `beta_inc`
+# through `StatsFuns.tdistlogcdf`, so `truncated(TDist(ν), l, u)` — which
+# normalises eagerly at construction — cannot be built at all when the degrees
+# of freedom or a bound carries a `Dual`. `tdistlogcdf` is typed `(ν::T, x::T)`,
+# so a `Dual` bound promotes an untouched `ν` and the break lands either way.
+#
+# The location-scale wrapper `μ + σ * TDist(ν)` needs no methods of its own.
+# `Distributions.logcdf(::ContinuousAffineDistribution, ::Real)` standardises
+# the evaluation point and delegates to the inner distribution, so a `Dual` in
+# `μ` or `σ` arrives below as a `Dual` evaluation point, and a `Dual` `ν`
+# arrives as a `TDist{<:Dual}`. Adding wrapper methods on top would only
+# reintroduce the ambiguity with `Distributions`' own `logcdf(::TDist, ::Real)`.
+# The wrapper's `logcdf_ad_safe` methods in `src/ad_safe.jl` are what the
+# backends that never surface a wrapper type reach instead.
+Distributions.logcdf(d::TDist{<:Dual}, x::Real) = logcdf_ad_safe(d, x)
+Distributions.logcdf(d::TDist, x::Dual) = logcdf_ad_safe(d, x)
+Distributions.logcdf(d::TDist{<:Dual}, x::Dual) = logcdf_ad_safe(d, x)
+Distributions.logccdf(d::TDist{<:Dual}, x::Real) = logccdf_ad_safe(d, x)
+Distributions.logccdf(d::TDist, x::Dual) = logccdf_ad_safe(d, x)
+Distributions.logccdf(d::TDist{<:Dual}, x::Dual) = logccdf_ad_safe(d, x)
 
 end

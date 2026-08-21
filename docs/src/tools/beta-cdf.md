@@ -13,6 +13,8 @@ gamma-cdf) gap.
 
 This also blocks any distribution whose CDF routes through `beta_inc`, not
 just `Beta` itself — Student-t and LogLogistic among them.
+The Student-t case is covered here, in `_t_cdf` and its companions;
+see [Student-t](@ref t-hooks) on the hooks page.
 
 ## The fix
 
@@ -34,6 +36,24 @@ just `Beta` itself — Student-t and LogLogistic among them.
   `EpiAwareADToolsMooncakeExt` lift these into their backends;
   `EpiAwareADToolsForwardDiffExt` adds `Dual` methods directly; and
   `EpiAwareADToolsEnzymeExt` adds a direct Enzyme rule.
+
+`_t_cdf(ν, x)` is a second consumer of the same machinery rather than a fix of
+its own.
+A Student-t CDF is the regularised incomplete beta at
+`ν / (ν + x^2)`, so `_t_cdf` composes over `_beta_cdf` and every backend rule
+listed above carries through the composition unchanged; no per-backend
+Student-t rule exists, and the AD suite sweeps the whole matrix to check that.
+Two details are its own.
+It always evaluates the smaller of the two tails, so `logcdf` stays accurate
+arbitrarily deep into either tail instead of reconstructing a small number as
+`1 - F`.
+And at `x == 0` the beta argument sits at 1, where `_beta_cdf`'s x-partial
+diverges while the inner derivative is exactly zero, so the chain rule asks for
+`0 * Inf`; the guard there returns the constant `1/2` plus a term linear in `x`
+carrying the finite true partial.
+That guard tests [`primal`](@ref) rather than the argument itself, since
+ForwardDiff's `==` and `iszero` compare a `Dual`'s partials as well and a
+seeded zero therefore tests unequal to `0`.
 
 `ad_safe.jl`'s `pdf_ad_safe(::Beta)` override is a separate, narrower fix in
 the same family: it routes around a confirmed-wrong Enzyme rule for
