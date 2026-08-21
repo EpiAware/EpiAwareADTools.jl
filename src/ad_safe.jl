@@ -24,9 +24,9 @@
 # and scale) are the same story one composition further out: a Student-t CDF
 # is a regularised incomplete beta, so `Distributions.logcdf(::TDist)` reaches
 # `beta_inc` through `StatsFuns.tdistlogcdf` and breaks the same way. They
-# route through `_t_cdf` and its companions, which compose over `_beta_cdf`
-# (EpiAwareADTools#80). `tdistlogcdf` is typed `(ν::T, x::T)`, so it promotes
-# an untouched degrees of freedom to the AD type: the break lands even when
+# route through `_t_cdf` and its companions, which compose over
+# `_beta_cdf`. `tdistlogcdf` is typed `(ν::T, x::T)`, so it promotes an
+# untouched degrees of freedom to the AD type: the break lands even when
 # only the location and scale are differentiated.
 #
 # The `LogNormal`/`Weibull` methods are a narrower case: their stock
@@ -156,8 +156,7 @@ routes through [`_gamma_logccdf`](@ref), which computes the survival directly
 rather than as ``1 - F``, so a survival term differentiates w.r.t. the Gamma
 shape/scale (the stock `logccdf(::Gamma)` calls `_gammalogccdf`, which has no
 `ForwardDiff.Dual` shape method and errors) *and* stays accurate far into the
-right tail, where ``F`` itself has already rounded to `1`
-(EpiAwareADTools#47).
+right tail, where ``F`` itself has already rounded to `1`.
 
 An extension point: a downstream package adds methods for its own component
 types, the same pattern as [`pdf_ad_safe`](@ref).

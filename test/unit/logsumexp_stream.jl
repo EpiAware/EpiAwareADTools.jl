@@ -1,9 +1,9 @@
-# Value-level unit tests for `logsumexp_stream` (EpiAwareADTools#39): the
-# streaming log-sum-exp accumulator over an unbounded discrete support.
-# Numerical agreement with `LogExpFunctions.logsumexp`, the run-based
-# stopping rule, the degenerate-mass edge case, and the strict/non-strict
-# non-convergence paths. Backend gradient coverage lives in the `:ad` items
-# under `test/ad/` (the "logsumexp_stream" ADFixtures scenario).
+# Value-level unit tests for `logsumexp_stream`, the streaming log-sum-exp
+# accumulator over an unbounded discrete support. Numerical agreement with
+# `LogExpFunctions.logsumexp`, the run-based stopping rule, the degenerate-mass
+# edge case, and the strict/non-strict non-convergence paths. Backend gradient
+# coverage lives in the `:ad` items under `test/ad/` (the "logsumexp_stream"
+# ADFixtures scenario).
 
 @testitem "logsumexp_stream: exact agreement with LogExpFunctions.logsumexp on a fixed batch" begin
     using EpiAwareADTools: logsumexp_stream

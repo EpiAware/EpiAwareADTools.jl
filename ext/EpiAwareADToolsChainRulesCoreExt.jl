@@ -12,13 +12,12 @@ using ChainRulesCore: ChainRulesCore, NoTangent
 # — and Mooncake, which lifts ChainRules rules — from tracing through it.
 ChainRulesCore.@non_differentiable primal(::Any)
 
-# `NonDifferentiable` (EpiAwareADTools#37) generalises the same
-# non-differentiable-primitive discipline `primal` gets above to an
-# arbitrary user function, registered ONCE here rather than once per user
-# function. The call's own body already strips both its arguments and its
-# result via `primal`, so this marking is defence-in-depth for a
-# ChainRules-consuming context beyond the four backends this package tests
-# directly (mirrors `primal`'s own registration above).
+# `NonDifferentiable` generalises the same non-differentiable-primitive
+# discipline `primal` gets above to an arbitrary user function, registered ONCE
+# here rather than once per user function. The call's own body already strips
+# both its arguments and its result via `primal`, so this marking is
+# defence-in-depth for a ChainRules-consuming context beyond the four backends
+# this package tests directly (mirrors `primal`'s own registration above).
 ChainRulesCore.@non_differentiable (nd::NonDifferentiable)(args...)
 
 # Reverse- and forward-mode rules for `_gamma_cdf(k, θ, x) = P(k, x/θ)`. The
@@ -49,11 +48,11 @@ function ChainRulesCore.frule(
 end
 
 # Reverse- and forward-mode rules for `_gamma_logccdf(k, θ, x) =
-# log(Q(k, x/θ))`, the log-space survival companion to `_gamma_cdf`
-# (EpiAwareADTools#47). The analytical partials live in
-# `_gamma_logccdf_value_and_partials` (in `src/gamma_ad.jl`), which reuses
-# `_gamma_cdf_value_and_partials`'s `(dk, dθ, dx)` divided by an
-# accurately-computed `Q` rather than a literal `1 - P`.
+# log(Q(k, x/θ))`, the log-space survival companion to `_gamma_cdf`. The
+# analytical partials live in `_gamma_logccdf_value_and_partials` (in
+# `src/gamma_ad.jl`), which reuses `_gamma_cdf_value_and_partials`'s
+# `(dk, dθ, dx)` divided by an accurately-computed `Q` rather than a literal
+# `1 - P`.
 function ChainRulesCore.rrule(
         ::typeof(_gamma_logccdf), k::Real, θ::Real, x::Real
     )

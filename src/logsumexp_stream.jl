@@ -1,13 +1,11 @@
-# A shared, differentiable streaming log-sum-exp accumulator over an
-# unbounded discrete support (EpiAwareADTools#39, part of the AD/numerics
-# epic #35). Every consumer summing a series in log space over k = 0, 1, 2,
-# ... currently writes its own stopping rule; a first-negligible-term rule
+# A shared, differentiable streaming log-sum-exp accumulator over an unbounded
+# discrete support. Every consumer summing a series in log space over k = 0, 1,
+# 2, ... currently writes its own stopping rule; a first-negligible-term rule
 # silently truncates a heavy tail that dips low for a term or two and then
-# recovers. This accumulates with the classic running-max/rescale
-# log-sum-exp identity, updated incrementally per term (so the full
-# sequence is never materialised), and stops only after a configurable RUN
-# of consecutive terms has left the running total unchanged within
-# tolerance.
+# recovers. This accumulates with the classic running-max/rescale log-sum-exp
+# identity, updated incrementally per term (so the full sequence is never
+# materialised), and stops only after a configurable RUN of consecutive terms
+# has left the running total unchanged within tolerance.
 #
 # Plain generic Julia control flow (comparisons, `exp`, `log`, `+`, `*`) —
 # no non-differentiable primitive is called anywhere, so every supported AD

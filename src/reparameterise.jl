@@ -1,13 +1,12 @@
 # The reparameterisation-trick / common-random-numbers complement to the
-# tape-strip pair (EpiAwareADTools#38, part of the AD/numerics epic #35).
-# Differentiating a quantity built from a random draw only makes sense when
-# the draw is held fixed while the parameters vary against it; otherwise the
-# derivative is meaningless rather than merely noisy. `primal` already
-# strips a genuinely non-differentiable hyperparameter off the tape; this
-# file gives the matching pair for the OTHER direction: pin a draw as a
+# tape-strip pair. Differentiating a quantity built from a random draw only
+# makes sense when the draw is held fixed while the parameters vary against it;
+# otherwise the derivative is meaningless rather than merely noisy. `primal`
+# already strips a genuinely non-differentiable hyperparameter off the tape;
+# this file gives the matching pair for the OTHER direction: pin a draw as a
 # fixed realisation (`fixed_draw`), and resolve the element type a
-# parameter-dependent accumulator should be seeded at so a derivative
-# threaded through it is not silently severed (`ad_eltype`).
+# parameter-dependent accumulator should be seeded at so a derivative threaded
+# through it is not silently severed (`ad_eltype`).
 
 @doc """
 Pin a draw as a fixed, non-differentiated realisation for the

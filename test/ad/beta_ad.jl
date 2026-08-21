@@ -39,16 +39,16 @@
     end
 end
 
-@testitem "_rib_value_and_partials disparate-shape regression (#42)" tags = [
+@testitem "_rib_value_and_partials disparate-shape regression" tags = [
     :ad, :forwarddiff,
 ] begin
     # Boundary-adjacent, wildly disparate p/q regime a plausible
-    # Student-t/LogLogistic/Beta `crps` call site can land in (see issue
-    # #42): before the continued fraction's A_n/B_n accumulators were
-    # rescaled, these overflowed to Inf around n~100, and the final
-    # `A * dB_p / B^2` combination produced NaN for both shape partials.
-    # Values from a direct check against `SpecialFunctions.beta_inc` and a
-    # manual finite-difference ground truth (issue #42's own repro table).
+    # Student-t/LogLogistic/Beta `crps` call site can land in. Without the
+    # continued fraction's A_n/B_n rescaling these accumulators overflow to
+    # Inf around n~100, and the final `A * dB_p / B^2` combination returns
+    # NaN for both shape partials. Values come from a direct check against
+    # `SpecialFunctions.beta_inc` and a manual finite-difference ground
+    # truth.
     using SpecialFunctions: beta_inc
     using EpiAwareADTools: _rib_value_and_partials
 
@@ -76,7 +76,7 @@ end
     # Hitting `maxiter` returns the last iterate with only a `@debug`
     # trace, so pin that the default ceiling has a wide margin: raising
     # `maxiter` well past it must not change the answer, even one step
-    # more disparate than the harshest #42 grid point.
+    # more disparate than the harshest case above.
     using EpiAwareADTools: _rib_value_and_partials
 
     cases = [
@@ -102,7 +102,7 @@ end
 ] begin
     # The rescale threshold is `sqrt(floatmax(T))`, not a Float64
     # literal: Float32 accumulators overflow at ~3.4e38, which a fixed
-    # 1e100 trigger could never see, reproducing #42's NaN untouched.
+    # 1e100 trigger could never see, leaving the NaN in place.
     using EpiAwareADTools: _rib_value_and_partials
 
     p, q, x = 1.0f5, 0.01f0, 0.999999f0
@@ -115,7 +115,7 @@ end
 @testitem "_beta_cdf_value_and_partials vs Distributions.jl (disparate)" tags = [
     :ad, :forwarddiff,
 ] begin
-    # Property check (issue #42): the AD-traced primal comes from
+    # Property check: the AD-traced primal comes from
     # `_beta_cdf_value_and_partials`'s continued fraction, not directly
     # from `SpecialFunctions.beta_inc` (see `_beta_cdf` vs. the ChainRules
     # extension's `rrule`/`frule`), so it must independently agree with

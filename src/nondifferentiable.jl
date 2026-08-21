@@ -1,6 +1,5 @@
-# A user-facing, deliberate opt-out from differentiation (EpiAwareADTools#37,
-# part of the AD/numerics epic #35). The internal tape-strip pair
-# `primal`/`primal_distribution` and the per-backend
+# A user-facing, deliberate opt-out from differentiation. The internal
+# tape-strip pair `primal`/`primal_distribution` and the per-backend
 # `@non_differentiable`/`inactive`/`@zero_derivative` rules already give
 # `primal` itself this discipline; `nondifferentiable` generalises the SAME
 # recipe to an arbitrary user-supplied function, written ONCE here rather

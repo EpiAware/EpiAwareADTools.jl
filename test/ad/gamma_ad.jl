@@ -144,9 +144,9 @@ end
 end
 
 # AD coverage for `_gamma_logccdf`, the log-space survival companion to
-# `_gamma_cdf` (EpiAwareADTools#47). Mirrors the `_gamma_cdf` items above at
-# implementation tolerance, plus a tail-specific regression pinning the
-# partials' underflow floor that `_gamma_cdf` has no analogue of.
+# `_gamma_cdf`. Mirrors the `_gamma_cdf` items above at implementation
+# tolerance, plus a tail-specific regression pinning the partials' underflow
+# floor that `_gamma_cdf` has no analogue of.
 
 @testitem "_gamma_logccdf matches FiniteDifferences away from the tail" tags = [
     :ad, :forwarddiff,
@@ -230,14 +230,13 @@ end
 @testitem "_gamma_logccdf_value_and_partials deep-tail gradients" tags = [
     :ad, :forwarddiff,
 ] begin
-    # EpiAwareADTools#47 (PR #61 review): the partials of a *log* survival
-    # converge to finite, non-zero limits in the deep tail — `-dx` is the
-    # hazard rate, which tends to `1/θ` — so they must stay accurate past
-    # the point where `Q` itself underflows, not floor to `0`. For
-    # `Gamma(2, 1)`, `Q(2, z) = (1 + z)exp(-z)` gives closed forms
-    # `dx = -z/(1 + z)` and `dθ = z^2/(1 + z)`; the shape partial is
-    # checked against finite differences of the stock `logccdf`, which
-    # stays finite and accurate here.
+    # The partials of a *log* survival converge to finite, non-zero limits in
+    # the deep tail — `-dx` is the hazard rate, which tends to `1/θ` — so they
+    # must stay accurate past the point where `Q` itself underflows, not floor
+    # to `0`. For `Gamma(2, 1)`, `Q(2, z) = (1 + z)exp(-z)` gives closed forms
+    # `dx = -z/(1 + z)` and `dθ = z^2/(1 + z)`; the shape partial is checked
+    # against finite differences of the stock `logccdf`, which stays finite and
+    # accurate here.
     using EpiAwareADTools: _gamma_logccdf_value_and_partials
     using Distributions: Gamma, logccdf
     using FiniteDifferences: central_fdm

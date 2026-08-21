@@ -17,15 +17,15 @@ using SpecialFunctions: gamma, digamma
 # Mooncake `@zero_derivative` rule.
 EnzymeRules.inactive(::typeof(primal), args...) = nothing
 
-# `NonDifferentiable` (EpiAwareADTools#37): the same `inactive` marking,
-# generalised from the one specific function `primal` to ANY instance of the
-# wrapper type, regardless of the wrapped function `F` — one registration
-# covers every user function wrapped with `nondifferentiable`, including a
-# closure, since dispatch matches on the wrapper's own (unparametrised)
-# type. Enzyme treats the whole call as a constant in every mode (confirmed
-# directly: this also silently zeroes a captured value's contribution if the
-# wrapped closure closes over a live differentiated value rather than
-# receiving it as an argument — see `nondifferentiable`'s docstring).
+# `NonDifferentiable`: the same `inactive` marking, generalised from the one
+# specific function `primal` to ANY instance of the wrapper type, regardless of
+# the wrapped function `F` — one registration covers every user function
+# wrapped with `nondifferentiable`, including a closure, since dispatch matches
+# on the wrapper's own (unparametrised) type. Enzyme treats the whole call as a
+# constant in every mode (confirmed directly: this also silently zeroes a
+# captured value's contribution if the wrapped closure closes over a live
+# differentiated value rather than receiving it as an argument — see
+# `nondifferentiable`'s docstring).
 EnzymeRules.inactive(::NonDifferentiable, args...) = nothing
 
 # `EnzymeRules.@easy_rule` expands into both the reverse-mode
@@ -47,10 +47,10 @@ EnzymeRules.@easy_rule(
 )
 
 # `EnzymeRules.@easy_rule` for `_gamma_logccdf`, the `_gamma_cdf` rule's
-# log-space survival counterpart (EpiAwareADTools#47). The analytical
-# (dk, dθ, dx) come from `_gamma_logccdf_value_and_partials` in
-# `src/gamma_ad.jl`, the same source-of-truth helper the ChainRules rrule and
-# the ForwardDiff Dual path use.
+# log-space survival counterpart. The analytical (dk, dθ, dx) come from
+# `_gamma_logccdf_value_and_partials` in `src/gamma_ad.jl`, the same
+# source-of-truth helper the ChainRules rrule and the ForwardDiff Dual path
+# use.
 EnzymeRules.@easy_rule(
     _gamma_logccdf(k::Real, θ::Real, x::Real),
     @setup(

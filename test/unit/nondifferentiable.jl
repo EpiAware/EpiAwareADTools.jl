@@ -1,11 +1,11 @@
-# Value-level unit tests for `nondifferentiable` (EpiAwareADTools#37): the
-# user-facing differentiation opt-out. Non-AD value-level behaviour here
-# (the wrapper returns the plain, primal-stripped result of calling `f`, and
-# raises a clear error for a non-`primal`-strippable return type); backend
-# gradient coverage — including the documented consequence for a closure that
-# captures a live differentiated value — lives in the `:ad` items under
-# `test/ad/` (the "nondifferentiable wrapped term" / "nondifferentiable array
-# argument" / "nondifferentiable captured value" ADFixtures scenarios).
+# Value-level unit tests for `nondifferentiable`, the user-facing
+# differentiation opt-out. Non-AD value-level behaviour here (the wrapper
+# returns the plain, primal-stripped result of calling `f`, and raises a clear
+# error for a non-`primal`-strippable return type); backend gradient coverage —
+# including the documented consequence for a closure that captures a live
+# differentiated value — lives in the `:ad` items under `test/ad/` (the
+# "nondifferentiable wrapped term" / "nondifferentiable array argument" /
+# "nondifferentiable captured value" ADFixtures scenarios).
 
 @testitem "nondifferentiable: calls f and returns its (already primal) value" begin
     using EpiAwareADTools: nondifferentiable
@@ -48,13 +48,12 @@ end
     @test grid.lo == 0.0 && grid.hi == 1.0
 end
 
-@testitem "nondifferentiable: an array-bearing struct argument (issue #37)" begin
+@testitem "nondifferentiable: an array-bearing struct argument" begin
     using EpiAwareADTools: nondifferentiable
     import EpiAwareADTools: primal
 
-    # Issue #37's own motivating example, verbatim: the struct field is a
-    # `Vector`, so both the argument and its own `primal` method need
-    # `primal(::AbstractArray)`.
+    # The motivating example: the struct field is a `Vector`, so both the
+    # argument and its own `primal` method need `primal(::AbstractArray)`.
     struct QuadratureGrid
         nodes::Vector{Float64}
     end

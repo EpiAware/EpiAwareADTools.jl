@@ -31,8 +31,8 @@ ported here to Julia with a 1000-term default ceiling this package's own
 test suite validates against the paper's published table and against
 `SpecialFunctions.beta_inc` for widely disparate `p`/`q` near the `x`
 boundary, where fewer terms converge too slowly for full precision
-(issue #42; the upstream 100-term default left both the primal and the
-partials under-converged there).
+(the upstream 100-term default left both the primal and the partials
+under-converged there).
 """
 @inline function _rib_f(x::Real, p::Real, q::Real)
     return q * x / (p * (1 - x))
@@ -96,7 +96,7 @@ end
 # Only valid for `x <= p/(p+q)`; the caller applies the reflection symmetry
 # for the complementary regime. `maxiter` caps the term count needed for
 # the hardest cases this package's tests validate against `beta_inc` at
-# widely disparate `p`/`q` near the `x` boundary (issue #42): the original
+# widely disparate `p`/`q` near the `x` boundary: the original
 # 100-term default left ~1e-5 relative error in the primal there (and,
 # combined with the overflow below, NaN shape partials). The loop below
 # exits as soon as the ratios the final formulas depend on stop moving
@@ -210,9 +210,8 @@ function _rib_value_and_partials(
         r_A, G_p, G_q = r_A_new, G_p_new, G_q_new
         converged && break
     end
-    # An under-converged return is quieter than the NaN it replaced (#42),
-    # so leave a trace; the disparate-shape tests assert a wide margin
-    # against this ceiling.
+    # An under-converged return is quieter than a NaN, so leave a trace;
+    # the disparate-shape tests assert a wide margin against this ceiling.
     converged ||
         @debug "_rib_value_and_partials hit maxiter without converging" x p q maxiter
 

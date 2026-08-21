@@ -13,7 +13,7 @@
 # extension, so they only exist once the package is loaded alongside its
 # trigger packages, and TestItemRunner runs items in `Dict` order rather than
 # file order. An item that leaves the load to a neighbour asserts nothing on
-# the runs where it happens to go first (#88).
+# the runs where it happens to go first.
 
 @testitem "xlogy/xlog1py pass Mooncake.TestUtils.test_rule" tags = [
     :ad, :mooncake, :mooncake_reverse,

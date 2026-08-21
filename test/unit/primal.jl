@@ -45,8 +45,8 @@ end
     @test params(p) === params(d)
     @test all(x -> cdf(p, x) == cdf(d, x), [0.5, 1.0, 3.0, 9.0, 12.0])
 
-    # Single-parameter family: `params` is the Float64 TRIPLE issue #58
-    # reports.
+    # Single-parameter family: `params` on the truncation is a Float64
+    # TRIPLE, not the untruncated `Exponential`'s single rate.
     e = truncated(Exponential(1.0), 0.0, 10.0)
     @test params(primal_distribution(e)) === (1.0, 0.0, 10.0)
 end
@@ -62,7 +62,7 @@ end
     hi = truncated(Gamma(2.0, 1.0); upper = 5.0)
     @test primal_distribution(hi).lower === nothing
 
-    # Issue #57's reproducer: an unbounded DISCRETE component.
+    # An unbounded DISCRETE component.
     pois = truncated(Poisson(3.0); lower = 1)
     @test params(primal_distribution(pois)) === (3.0, 1.0, nothing)
 

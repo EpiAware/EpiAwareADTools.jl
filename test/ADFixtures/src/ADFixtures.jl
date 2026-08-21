@@ -229,11 +229,11 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
         [1.7, 2.3, 0.85], (Constant(obs_beta),)
     )
 
-    # Student-t (EpiAwareADTools#80). `_t_cdf` composes over `_beta_cdf`
-    # rather than carrying rules of its own, so these sweep the whole matrix
-    # to confirm the inherited coverage is real. `obs_t` straddles the sign
-    # branch and includes the `x == 0` guard, where the beta argument sits at
-    # 1 and the composition alone would return a zero x-partial.
+    # Student-t. `_t_cdf` composes over `_beta_cdf` rather than carrying rules
+    # of its own, so these sweep the whole matrix to confirm the inherited
+    # coverage is real. `obs_t` straddles the sign branch and includes the
+    # `x == 0` guard, where the beta argument sits at 1 and the composition
+    # alone would return a zero x-partial.
     obs_t = [-3.0, -0.7, 0.0, 0.7, 3.0]
 
     _push!(
@@ -359,11 +359,11 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
         [2.0, 1.5], (Constant(obs_below_support),)
     )
 
-    # `nondifferentiable` (EpiAwareADTools#37): `θ[1]` flows only through the
-    # wrapped term, `θ[2]` only through the plain one, so the reference
-    # gradient's first component is EXACTLY zero regardless of backend —
-    # this scenario's whole point is confirming every backend agrees on
-    # that, not just that the numbers happen to match.
+    # `nondifferentiable`: `θ[1]` flows only through the wrapped term, `θ[2]`
+    # only through the plain one, so the reference gradient's first component
+    # is EXACTLY zero regardless of backend — this scenario's whole point is
+    # confirming every backend agrees on that, not just that the numbers happen
+    # to match.
     _push!(
         "nondifferentiable wrapped term",
         (θ, _obs) -> nondifferentiable(x -> x^2)(θ[1]) + θ[2]^2,
@@ -393,13 +393,13 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
         (θ, _obs) -> nondifferentiable(() -> θ[1]^2)() + θ[2]^2,
         [2.0, 1.5], (Constant(obs),); reference = [0.0, 3.0]
     )
-    # `primal_distribution` on a `Truncated` (EpiAwareADTools#57, #58): the
-    # window quantile of a pre-truncated component must be a constant. `θ[1]`
-    # reaches the result ONLY through the strip and `θ[2]` only through the
-    # plain term, so the first gradient component is EXACTLY zero. The
-    # reference is written out for the same reason as the captured-value
-    # scenario above: a ForwardDiff self-reference would move with the very
-    # regression this pins. `Exponential`/`Normal` rather than `Gamma` —
+    # `primal_distribution` on a `Truncated`: the window quantile of a
+    # pre-truncated component must be a constant. `θ[1]` reaches the result
+    # ONLY through the strip and `θ[2]` only through the plain term, so the
+    # first gradient component is EXACTLY zero. The reference is written out
+    # for the same reason as the captured-value scenario above: a ForwardDiff
+    # self-reference would move with the very regression this pins.
+    # `Exponential`/`Normal` rather than `Gamma` —
     # `truncated(Gamma{Dual}, l, u)` cannot be built at all, since
     # `_logcdf_noninclusive` reaches `gamma_inc` on a `Dual`.
     _push!(
@@ -420,11 +420,11 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
         ) + θ[2]^2,
         [1.5, 2.0], (Constant(obs),); reference = [0.0, 4.0]
     )
-    # `logsumexp_stream` (EpiAwareADTools#39): a parameterised geometric
-    # series Σ_{k≥0} exp(-k·θ), differentiated in θ. Plain generic control
-    # flow with no non-differentiable primitive, so this needs no bespoke
-    # per-backend rule — the scenario exists to confirm every backend
-    # differentiates straight through the accumulator's loop.
+    # `logsumexp_stream`: a parameterised geometric series Σ_{k≥0} exp(-k·θ),
+    # differentiated in θ. Plain generic control flow with no
+    # non-differentiable primitive, so this needs no bespoke per-backend rule —
+    # the scenario exists to confirm every backend differentiates straight
+    # through the accumulator's loop.
     _push!(
         "logsumexp_stream geometric",
         (θ, _obs) -> EpiAwareADTools.logsumexp_stream(
@@ -432,24 +432,24 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
         ).value,
         [1.0], (Constant(obs),)
     )
-    # `fixed_draw` (EpiAwareADTools#38): `θ[1]` reaches the result only
-    # through the pinned draw, so its derivative is EXACTLY zero regardless
-    # of backend — the reparameterisation-trick complement of the
-    # `nondifferentiable` scenarios above, pinned the same way. `θ[2]`
-    # reaches the plain term, giving gradient `[0, 2θ[2]]`.
+    # `fixed_draw`: `θ[1]` reaches the result only through the pinned draw, so
+    # its derivative is EXACTLY zero regardless of backend — the
+    # reparameterisation-trick complement of the `nondifferentiable` scenarios
+    # above, pinned the same way. `θ[2]` reaches the plain term, giving
+    # gradient `[0, 2θ[2]]`.
     _push!(
         "fixed_draw pinned realisation",
         (θ, _obs) -> fixed_draw(θ[1]) + θ[2]^2,
         [2.0, 1.5], (Constant(obs),)
     )
-    # `ad_eltype` (EpiAwareADTools#38): a `Vector{Float64}` buffer errors
-    # the moment a `Dual`/`TrackedReal` term is written into it (see
-    # `test/unit/reparameterise.jl`'s direct demonstration), so this
-    # scenario seeds the buffer at `ad_eltype(θ)` instead and checks the
-    # gradient survives on every backend — including Enzyme and Mooncake,
-    # which never surface a wrapper type to the primal computation at all,
-    # so `ad_eltype` is a harmless `Float64` no-op there and the buffer
-    # never risked the footgun in the first place.
+    # `ad_eltype`: a `Vector{Float64}` buffer errors the moment a
+    # `Dual`/`TrackedReal` term is written into it (see
+    # `test/unit/reparameterise.jl`'s direct demonstration), so this scenario
+    # seeds the buffer at `ad_eltype(θ)` instead and checks the gradient
+    # survives on every backend — including Enzyme and Mooncake, which never
+    # surface a wrapper type to the primal computation at all, so `ad_eltype`
+    # is a harmless `Float64` no-op there and the buffer never risked the
+    # footgun in the first place.
     _push!(
         "ad_eltype seeds a differentiable buffer",
         (θ, obs) -> begin

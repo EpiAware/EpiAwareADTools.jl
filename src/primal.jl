@@ -94,7 +94,7 @@ function primal_distribution(d)
     return D(p...)
 end
 
-# `params(::Truncated)` has no matching constructor (#57, #58); rebuild
+# `params(::Truncated)` has no matching constructor; rebuild
 # through the public `truncated` instead.
 function primal_distribution(d::Truncated)
     return truncated(

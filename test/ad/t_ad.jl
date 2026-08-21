@@ -1,8 +1,8 @@
 # Unit-level AD coverage for the Student-t CDF path. Complements the scenario
 # suite in `scenarios.jl`: those check end-to-end gradient agreement at scenario
 # tolerance (~1e-6); these pin the implementation-level guarantees (agreement
-# with Distributions.jl, the `x == 0` guard, tail accuracy, and the `truncated`
-# constructor issue #80 reported) that no scenario exercises directly. Mirrors
+# with Distributions.jl, the `x == 0` guard, tail accuracy, and the
+# `truncated` constructor path) that no scenario exercises directly. Mirrors
 # `beta_ad.jl`'s structure for the Student-t counterpart.
 #
 # `_t_cdf` composes over `_beta_cdf` rather than carrying rules of its own, so
@@ -81,10 +81,10 @@ end
 @testitem "truncated Student-t gradient matches central differences" tags = [
     :ad, :forwarddiff,
 ] begin
-    # Issue #80's own reproduction. `truncated` normalises eagerly, so
-    # building the distribution calls `logcdf` before any density is
-    # evaluated; without the `Dual` methods this errors inside
-    # `SpecialFunctions.beta_inc` rather than returning a wrong number.
+    # `truncated` normalises eagerly, so building the distribution calls
+    # `logcdf` before any density is evaluated; without the `Dual` methods this
+    # errors inside `SpecialFunctions.beta_inc` rather than returning a wrong
+    # number.
     using Distributions: TDist, truncated, logpdf
     using FiniteDifferences: FiniteDifferences, central_fdm
     using ForwardDiff: ForwardDiff

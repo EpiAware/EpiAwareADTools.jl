@@ -150,12 +150,12 @@ AD-safe Gamma log survival, `log(Q(k, x/θ))` — the analogue of
 Unlike the naive `log1p(-_gamma_cdf(k, θ, x))`, this never forms the CDF as a
 literal float and subtracts it from `1`: [`_gamma_logQ`](@ref) reads the
 survival from `SpecialFunctions.gamma_inc`'s own second output, computed
-independently of the CDF, so precision survives far into the right tail
-where the CDF itself has already rounded to exactly `1`
-(EpiAwareADTools#47). AD coverage follows the same per-backend pattern as
-`_gamma_cdf`: [`_gamma_logccdf_value_and_partials`](@ref) supplies the
-shared primal and partials the ChainRules rule, the ForwardDiff `Dual`
-methods, and the Enzyme rule all consume.
+independently of the CDF, so precision survives far into the right tail where
+the CDF itself has already rounded to exactly `1`. AD coverage follows the same
+per-backend pattern as `_gamma_cdf`:
+[`_gamma_logccdf_value_and_partials`](@ref) supplies the shared primal and
+partials the ChainRules rule, the ForwardDiff `Dual` methods, and the Enzyme
+rule all consume.
 """
 function _gamma_logccdf(k::Real, θ::Real, x::Real)
     x <= 0 && return zero(k) * zero(θ) * zero(x)
@@ -184,8 +184,7 @@ keeps a BigFloat caller on the exact quotient to the depth its precision
 genuinely supports. At reduced precision (Float32) the two paths cross at
 a higher error floor, so `dk` carries `~1e-5` relative error in the
 transition band — a documented limit rather than a tunable. Every backend
-receives finite, accurate gradients across the whole tail
-(EpiAwareADTools#47).
+receives finite, accurate gradients across the whole tail.
 
 The `x <= 0` branch returns the same constant `(0, 0, 0, 0)`
 [`_gamma_cdf_value_and_partials`](@ref) uses for its primal-only path, since

@@ -95,7 +95,7 @@ AD-safe Student-t log survival ``\log(1 - F_ν(x))``, the reflection of
 _t_logccdf(ν::Real, x::Real) = _t_logcdf(ν, -x)
 
 # `μ + σ * TDist(ν)`, the wrapper an affine reparameterisation of a Student-t
-# builds and the type issue #80's own call site reaches. `LocationScale` is
+# builds and a truncated-t call site reaches. `LocationScale` is
 # Distributions' alias for `AffineDistribution`; pinning the third parameter
 # to a `TDist` keeps these hook methods off every other affine distribution,
 # whose stock evaluators are left alone.

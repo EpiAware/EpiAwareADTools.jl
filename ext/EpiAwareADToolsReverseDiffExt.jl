@@ -28,7 +28,7 @@ primal(x::TrackedReal) = primal(ReverseDiff.value(x))
 @grad_from_chainrules _gamma_cdf(k::Real, θ::Real, x::TrackedReal)
 
 # Same lift for `_gamma_logccdf(k, θ, x) = log(Q(k, x/θ))`, the log-space
-# survival companion to `_gamma_cdf` (EpiAwareADTools#47), defined in
+# survival companion to `_gamma_cdf`, defined in
 # `EpiAwareADToolsChainRulesCoreExt`.
 @grad_from_chainrules _gamma_logccdf(
     k::TrackedReal, θ::TrackedReal, x::TrackedReal

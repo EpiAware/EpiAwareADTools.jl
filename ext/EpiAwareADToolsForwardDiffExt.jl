@@ -83,9 +83,9 @@ function _gamma_cdf(k::Real, θ::Real, x::Dual)
     return _dual_impl(k, θ, x)
 end
 
-# Same seven-method coverage for `_gamma_logccdf(k, θ, x) = log(Q(k, x/θ))`
-# (EpiAwareADTools#47), deferring to `_gamma_logccdf_value_and_partials`
-# instead of `_gamma_cdf_value_and_partials`.
+# Same seven-method coverage for `_gamma_logccdf(k, θ, x) = log(Q(k, x/θ))`,
+# deferring to `_gamma_logccdf_value_and_partials` instead of
+# `_gamma_cdf_value_and_partials`.
 function _logccdf_dual_impl(k, θ, x)
     T = _dual_tag(k, θ, x)
     N = _dual_width(k, θ, x)
@@ -186,12 +186,12 @@ Distributions.logccdf(d::Beta{<:Dual}, x::Real) = logccdf_ad_safe(d, x)
 Distributions.logccdf(d::Beta, x::Dual) = logccdf_ad_safe(d, x)
 Distributions.logccdf(d::Beta{<:Dual}, x::Dual) = logccdf_ad_safe(d, x)
 
-# Same gap again for a Student-t, one composition further out
-# (EpiAwareADTools#80): `Distributions.logcdf(::TDist)` reaches `beta_inc`
-# through `StatsFuns.tdistlogcdf`, so `truncated(TDist(ν), l, u)` — which
-# normalises eagerly at construction — cannot be built at all when the degrees
-# of freedom or a bound carries a `Dual`. `tdistlogcdf` is typed `(ν::T, x::T)`,
-# so a `Dual` bound promotes an untouched `ν` and the break lands either way.
+# Same gap again for a Student-t, one composition further out:
+# `Distributions.logcdf(::TDist)` reaches `beta_inc` through
+# `StatsFuns.tdistlogcdf`, so `truncated(TDist(ν), l, u)` — which normalises
+# eagerly at construction — cannot be built at all when the degrees of freedom
+# or a bound carries a `Dual`. `tdistlogcdf` is typed `(ν::T, x::T)`, so a
+# `Dual` bound promotes an untouched `ν` and the break lands either way.
 #
 # The location-scale wrapper `μ + σ * TDist(ν)` needs no methods of its own.
 # `Distributions.logcdf(::ContinuousAffineDistribution, ::Real)` standardises

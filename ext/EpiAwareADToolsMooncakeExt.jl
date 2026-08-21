@@ -18,7 +18,7 @@ Mooncake.@from_chainrules Mooncake.DefaultCtx Tuple{
 }
 
 # Same lift for `_gamma_logccdf(k, θ, x) = log(Q(k, x/θ))`, the log-space
-# survival companion to `_gamma_cdf` (EpiAwareADTools#47).
+# survival companion to `_gamma_cdf`.
 Mooncake.@from_chainrules Mooncake.DefaultCtx Tuple{
     typeof(_gamma_logccdf), Real, Real, Real,
 }
@@ -37,7 +37,7 @@ Mooncake.@from_chainrules Mooncake.DefaultCtx Tuple{
 # Mooncake modes.
 Mooncake.@zero_derivative Mooncake.DefaultCtx Tuple{typeof(primal), Real}
 
-# `NonDifferentiable` (EpiAwareADTools#37): the same `@zero_derivative`
+# `NonDifferentiable`: the same `@zero_derivative`
 # treatment, generalised from the one specific function `primal` to ANY
 # instance of the wrapper type via the bare (unparametrised) `Vararg`
 # pattern below — one registration covers every user function wrapped with

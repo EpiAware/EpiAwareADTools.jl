@@ -1,12 +1,11 @@
-# Value-level unit tests for the reparameterisation-trick helper pair
-# (EpiAwareADTools#38): `fixed_draw` pins a draw as a constant realisation,
-# `ad_eltype` resolves the type a parameter-dependent accumulator should be
-# seeded at. `fixed_draw` delegates to `primal`, so its container contract is
-# already pinned by `test/unit/primal.jl`; these tests cover the delegation
-# itself plus the buffer footgun `ad_eltype` exists to avoid. Backend
-# gradient coverage lives in the `:ad` scenarios under `test/ad/` (the
-# "fixed_draw pinned realisation" / "ad_eltype seeds a differentiable
-# buffer" ADFixtures scenarios).
+# Value-level unit tests for the reparameterisation-trick helper pair:
+# `fixed_draw` pins a draw as a constant realisation, `ad_eltype` resolves the
+# type a parameter-dependent accumulator should be seeded at. `fixed_draw`
+# delegates to `primal`, so its container contract is already pinned by
+# `test/unit/primal.jl`; these tests cover the delegation itself plus the
+# buffer footgun `ad_eltype` exists to avoid. Backend gradient coverage lives
+# in the `:ad` scenarios under `test/ad/` (the "fixed_draw pinned realisation"
+# / "ad_eltype seeds a differentiable buffer" ADFixtures scenarios).
 
 @testitem "fixed_draw is the identity on a real and keeps its type" begin
     using EpiAwareADTools: fixed_draw

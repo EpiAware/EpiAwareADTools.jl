@@ -36,7 +36,7 @@ gamma density in `_gamma_cdf_value_and_partials` needs it.
 
 `_gamma_logccdf(k, θ, x) = log(Q(k, x/θ))` is `_gamma_cdf`'s counterpart for the log survival rather than the CDF.
 Naively computing it as `log1p(-_gamma_cdf(k, θ, x))` underflows to `-Inf` once the CDF rounds to exactly `1` in the working float type.
-That is far short of where the stock evaluator, which never forms `1 - F` as a literal float, stays finite (EpiAwareADTools#47).
+That is far short of where the stock evaluator, which never forms `1 - F` as a literal float, stays finite.
 `_gamma_logccdf` instead reads the survival from `gamma_inc`'s own independently-computed second output while it stays representable, falling back to `loggamma(k, z) - loggamma(k)` once it does not — the same branch structure `StatsFuns._gammalogccdf` uses for the stock, non-differentiable evaluator.
 `_gamma_logccdf_value_and_partials` forms the `x` and `θ` partials in log space as `exp(logpdf - log Q)`, the ratio `f/Q`, which is well conditioned at any tail depth.
 The shape partial divides `_gamma_cdf_value_and_partials`'s series by `gamma_inc`'s accurate survival while `Q ≥ √eps(T)`, hands over to `_dlogQ_da_tail_series`'s corrected asymptotic expansion beyond, and carries the same per-backend rules as `_gamma_cdf`.

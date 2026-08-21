@@ -15,7 +15,8 @@ const QA_CONFIG = (
 
     # Path to the isolated formatter environment, so the formatting check runs
     # pinned to the exact Runic version, rather than whatever version the
-    # shared test environment resolves on the CI Julia in use (#321).
+    # shared test environment resolves on the CI Julia in use
+    # (EpiAwarePackageTools#321).
     formatter_env = joinpath(@__DIR__, "..", "formatter"),
 
     # Per-check Aqua relaxations, e.g. (; ambiguities = false). Empty = all on.
