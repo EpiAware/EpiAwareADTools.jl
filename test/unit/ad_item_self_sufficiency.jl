@@ -10,10 +10,14 @@
 # trigger *and* `EpiAwareADTools` itself are loaded modules, so an item that
 # loads only the triggers gets the plain upstream method and silently tests
 # the wrong thing.
-# This item pins every AD item to loading the package for itself, so
-# reordering the files cannot change the result.
+# The same hazard applies to the backends. `DifferentiationInterface` reaches
+# a backend through its own extension, so an item that asks for
+# `AutoForwardDiff` without loading `ForwardDiff` also depends on a
+# neighbour having loaded it.
+# These items pin every AD item to loading what it exercises, so reordering
+# the files cannot change the result.
 
-@testitem "AD test items load EpiAwareADTools for themselves" begin
+@testitem "AD test items load the packages they exercise" begin
     using EpiAwareADTools: EpiAwareADTools
 
     root = pkgdir(EpiAwareADTools)
@@ -38,8 +42,8 @@
 
     parse_file(file) = Meta.parseall(read(file, String); filename = file)
 
-    # Every `@testitem` in `file`, with the setup snippets it names and
-    # whether its own body loads the package.
+    # Every `@testitem` in `file`, with the setup snippets it names, its
+    # body, and whether that body loads the package.
     function testitems(file)
         found = NamedTuple[]
         for ex in parse_file(file).args
@@ -57,6 +61,7 @@
                 found, (
                     label = string(basename(file), ": ", ex.args[3]),
                     setups = setups,
+                    body = ex.args[end],
                     loads = loads_module(ex.args[end], :EpiAwareADTools),
                 )
             )
@@ -105,4 +110,38 @@
             if !(item.loads || any(reaches, item.setups))
     ]
     @test offenders == String[]
+
+    # Same rule for the backends. `DifferentiationInterface` dispatches an
+    # `AutoX` type through its own extension, so an item that names one
+    # without loading the backend errors on the runs where no neighbour has
+    # loaded it yet.
+    triggers = [
+        :AutoForwardDiff => :ForwardDiff,
+        :AutoReverseDiff => :ReverseDiff,
+        :AutoEnzyme => :Enzyme,
+        :AutoMooncake => :Mooncake,
+        :AutoMooncakeForward => :Mooncake,
+        :AutoFiniteDifferences => :FiniteDifferences,
+    ]
+
+    # Does `ex` use `sym`? `using`/`import` lines are skipped, so a name
+    # that is only imported does not count as used.
+    function mentions(ex, sym::Symbol)
+        ex === sym && return true
+        ex isa Expr || return false
+        (ex.head === :using || ex.head === :import) && return false
+        return any(a -> mentions(a, sym), ex.args)
+    end
+
+    unloaded = [
+        string(item.label, " (", backend, " without ", mod, ")")
+            for item in items for (backend, mod) in triggers
+            if mentions(item.body, backend) &&
+            !loads_module(item.body, mod) &&
+            !any(
+                s -> haskey(snippets, s) &&
+                loads_module(snippets[s], mod), item.setups
+            )
+    ]
+    @test unloaded == String[]
 end
