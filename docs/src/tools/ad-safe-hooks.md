@@ -27,6 +27,7 @@ component through:
 Each is an extension point.
 The generic method falls through to the stock `Distributions` function, so a
 distribution that already differentiates cleanly is untouched.
+It carries no type bound on the distribution argument, so a leaf that implements the univariate interface through the `Distributions.jl` generic functions, without subtyping `UnivariateDistribution`, is evaluated the same way.
 The `Gamma` methods route through the [gamma-CDF derivative](@ref gamma-cdf),
 and the `Beta` methods through the [beta-CDF derivative](@ref beta-cdf), so
 each stays differentiable in its parameters.

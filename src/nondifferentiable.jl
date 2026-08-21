@@ -44,7 +44,7 @@ argument AND `f`'s result must be something [`primal`](@ref) can strip — a
 `primal` method already covers. Anything else raises a `MethodError` naming the
 missing `primal` method, a loud failure rather than a silently wrong
 derivative; add a `primal` method for that type (the same pattern
-[`primal_distribution`](@ref) follows for `UnivariateDistribution`) to cover
+[`primal_distribution`](@ref) follows for a distribution's parameters) to cover
 it. A STRUCT's constructor is itself callable, so wrapping it the same way —
 `nondifferentiable(QuadratureGrid)` — holds construction out of
 differentiation too, once the struct's own type has a `primal` method (there

@@ -108,3 +108,37 @@ end
     @test occursin("Categorical", msg)
     @test occursin("primal_distribution", msg)
 end
+
+@testitem "primal_distribution rebuilds a duck-typed leaf" begin
+    using Distributions
+    using EpiAwareADTools: primal_distribution
+
+    # Implements the univariate interface without subtyping
+    # `UnivariateDistribution`, and its `params` round-trips through its
+    # positional constructor.
+    struct DuckLeaf{T <: Real}
+        θ::T
+    end
+    Distributions.params(d::DuckLeaf) = (d.θ,)
+
+    d = DuckLeaf(1.5)
+    @test !(d isa UnivariateDistribution)
+    @test primal_distribution(d) === d
+end
+
+@testitem "primal_distribution names a duck-typed leaf with no params" begin
+    using EpiAwareADTools: primal_distribution
+
+    struct DuckNoParams
+        θ::Float64
+    end
+
+    @test_throws ArgumentError primal_distribution(DuckNoParams(1.0))
+    msg = try
+        primal_distribution(DuckNoParams(1.0))
+    catch err
+        sprint(showerror, err)
+    end
+    @test occursin("DuckNoParams", msg)
+    @test occursin("primal_distribution", msg)
+end

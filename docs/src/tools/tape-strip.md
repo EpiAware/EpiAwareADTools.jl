@@ -22,6 +22,7 @@ concerned, so it stays off the tape.
 `primal_distribution` has dedicated `Truncated`/`Censored` methods because
 their `params` does not round-trip through the positional constructor, and
 raises an `ArgumentError` naming the type for anything else that does not.
+The rebuild path carries no type bound, so a leaf that implements the univariate interface without subtyping `UnivariateDistribution` rebuilds too, provided its `params` round-trips.
 
 ```@example tape-strip
 using EpiAwareADTools, Distributions

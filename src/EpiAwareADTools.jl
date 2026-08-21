@@ -53,7 +53,7 @@ module EpiAwareADTools
 # introspection the tape-strip and gamma methods need. All module-scope
 # using/import live in this file (kit #105); the extensions import the
 # package's own internals from here.
-using Distributions: Distributions, UnivariateDistribution, Gamma, Beta,
+using Distributions: Distributions, Gamma, Beta,
     LogNormal, Weibull, TDist, LocationScale, Continuous, Truncated, params,
     shape, scale, pdf, logpdf, cdf, logcdf, ccdf, logccdf, truncated, censored
 
