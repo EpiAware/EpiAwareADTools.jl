@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   test:
-    uses: EpiAware/.github/.github/workflows/tests.yml@b96a45c468c1d80a29334426a1a4f3b0c04bea7e
+    uses: EpiAware/.github/.github/workflows/tests.yml@25424fb7f3b6bec94209bab86a42971bd01621ea
     with:
       # The managed standard needs Julia 1.11: `[sources]` (how test/Project.toml
       # pins the kit to main) is a Pkg 1.11 feature, and on 1.10 it is silently
@@ -25,7 +25,7 @@ jobs:
     secrets: inherit  # pragma: allowlist secret
 
   downgrade-compat:
-    uses: EpiAware/.github/.github/workflows/downgrade.yml@b96a45c468c1d80a29334426a1a4f3b0c04bea7e
+    uses: EpiAware/.github/.github/workflows/downgrade.yml@25424fb7f3b6bec94209bab86a42971bd01621ea
     with:
       julia_version: '1'
     secrets: inherit  # pragma: allowlist secret
