@@ -20,7 +20,7 @@ It is deliberately framed as fixes we host while we try to fix things upstream:
 every entry is documented with the upstream package or issue where it ideally
 belongs, and each is deleted once that upstream fix lands.
 
-Three families make up the current surface.
+Five families make up the current surface.
 
 - The tape-strip pair `primal` and `primal_distribution` reduce an AD-wrapped
   scalar or distribution to its underlying primal, keeping a non-differentiable
@@ -31,10 +31,15 @@ Three families make up the current surface.
   overload CDF evaluation for its own component types, backed by analytic
   `Gamma` and `Beta` CDF derivatives that `SpecialFunctions` leaves
   unimplemented.
-- Correct upstream `ChainRulesCore` rules lifted into a backend that lacks
-  them, currently `LogExpFunctions.xlogy`/`xlog1py` under Mooncake, which
-  otherwise returns a wrong shape-gradient for any Gamma log-density
-  differentiated at `shape == 1`.
+- `nondifferentiable` generalises the tape-strip discipline to an arbitrary
+  user-supplied function: a deliberate, user-facing opt-out from
+  differentiation, never a hidden default.
+- `logsumexp_stream` accumulates a log-sum-exp over an unbounded discrete
+  support, stopping only once a run of consecutive terms has left the total
+  unchanged rather than at the first negligible term.
+- The reparameterisation pair `fixed_draw` and `ad_eltype` pins a random draw
+  as a constant realisation the parameters vary against, and resolves the type
+  a parameter-dependent accumulator combined with such a draw is seeded at.
 
 Per-backend behaviour for ForwardDiff, ReverseDiff, Enzyme, Mooncake, and
 ChainRulesCore is supplied by package extensions loaded when each backend is
