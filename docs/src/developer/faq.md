@@ -127,8 +127,8 @@ task format           # apply Runic to src/test/docs/benchmark/ext
 task test-formatting  # verify without modifying files
 ```
 
-The formatter runs from the isolated `test/formatter` environment, which pins `Runic` to an exact version so the check is reproducible across the CI Julia matrix.
-Keep that pin in step with the `.pre-commit-config.yaml` Runic `additional_dependencies` version, or `test` and `pre-commit` will disagree about formatting.
+The formatter runs from the isolated `test/formatter` environment, which floors `Runic` at the release the tree is formatted with.
+Keep that floor in step with the `.pre-commit-config.yaml` Runic `additional_dependencies` spec, or `test` and `pre-commit` will disagree about formatting.
 
 ### Q: How do I check for type stability?
 
