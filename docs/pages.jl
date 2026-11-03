@@ -38,7 +38,6 @@ pages = [
     ],
     "Extensions" => [
         "ChainRulesCore" => "extensions/chain-rules-core.md",
-        "ChainRulesCore + LogExpFunctions + Mooncake" => "extensions/log-exp-functions-mooncake.md",
         "ChainRulesCore + Mooncake" => "extensions/mooncake.md",
         "Enzyme" => "extensions/enzyme.md",
         "ForwardDiff" => "extensions/forward-diff.md",
@@ -57,7 +56,6 @@ pages = [
         "AD-safe evaluation hooks" => "tools/ad-safe-hooks.md",
         "Gamma-CDF derivative" => "tools/gamma-cdf.md",
         "Beta-CDF derivative" => "tools/beta-cdf.md",
-        "xlogy/xlog1py Mooncake rules" => "tools/xlogy.md",
         "Streaming log-sum-exp: logsumexp_stream" => "tools/logsumexp-stream.md",
         "Reparameterisation trick: fixed_draw/ad_eltype" => "tools/reparameterisation.md",
     ],

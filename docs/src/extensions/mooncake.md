@@ -36,15 +36,17 @@ Mooncake does not lift the ChainRules `@non_differentiable primal` mark automati
 Without the `@zero_derivative` registration it traces `primal` as the identity and can propagate a gradient the caller meant to cut, silently.
 
 For the CDF primitives, an unloaded extension leaves Mooncake tracing into `gamma_inc` and `beta_inc`.
-Reverse mode is left without the shape partial that `SpecialFunctions` marks `@not_implemented`.
-Forward mode fails harder: the generated `frule!!` calls `ChainRulesCore.frule`, gets `nothing` for an undefined rule, and errors with `iterate(::Nothing)`.
+Mooncake 0.5.58 carries its own shape derivatives for both, so the traced result is no longer simply absent, but it is not the same number.
+`_gamma_logccdf` divides the shape partial by the survival, and below `√eps` it hands over to a tail series rather than taking that quotient; a trace reconstructs the naive quotient, which loses relative accuracy long before `Q` underflows and flips sign by `Q ≈ 1e-16` in Float64.
+Mooncake's own rules are also restricted to `IEEEFloat`, where these lifts take a `Real` triple, so a mixed-type or `BigFloat` call falls back to tracing the body.
+Keeping the lifts holds every backend on the one set of analytic partials in `src/gamma_ad.jl` and `src/beta_ad.jl`.
 
 Wrapping a function with `nondifferentiable` and differentiating it under Mooncake also has a consequence worth stating.
 A wrapped closure that captures a live differentiated value, rather than receiving it as an argument, has that captured contribution silently zeroed too.
 This is the same behaviour as every other supported backend, and it is confirmed directly on both Mooncake modes.
 
-Note that the `xlogy` and `xlog1py` rules are not here.
-They live in the separate [ChainRulesCore + LogExpFunctions + Mooncake extension](@ref ext-log-exp-functions-mooncake), which needs `LogExpFunctions` as a third trigger.
+Note that there are no `xlogy` or `xlog1py` rules here.
+Mooncake registers its own primitives for both from 0.5.58, which is what the `[compat]` floor of `Mooncake = "0.5.58"` pins.
 
 ## Upstream target
 
