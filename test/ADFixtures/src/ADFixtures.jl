@@ -170,10 +170,9 @@ function scenarios(; with_reference::Bool = false, category::Symbol = :marginal)
 
     # Stock `logpdf(Gamma)` at shape EXACTLY 1.0, where `gammalogpdf`'s
     # `xlogy(shape - 1, x / scale)` hits `xlogy` at a zero first argument. The
-    # `xlogy`/`xlog1py` rules in
-    # `EpiAwareADToolsLogExpFunctionsMooncakeExt` are what keep the two
-    # Mooncake modes agreeing with the reference here; without them both
-    # return `-digamma(1)` for the shape component.
+    # `xlogy`/`xlog1py` primitives Mooncake registers from 0.5.58 are what
+    # keep the two Mooncake modes agreeing with the reference here; below
+    # that floor both return `-digamma(1)` for the shape component.
     _push!(
         "logpdf Gamma at shape 1",
         (θ, obs) -> sum(x -> logpdf(Gamma(θ[1], θ[2]), x), obs),

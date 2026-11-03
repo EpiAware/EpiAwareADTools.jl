@@ -1,28 +1,20 @@
-# Unit-level AD coverage for the `xlogy`/`xlog1py` Mooncake rules in
-# `EpiAwareADToolsLogExpFunctionsMooncakeExt`. Complements the
-# "logpdf Gamma at shape 1" scenario in `scenarios.jl`: that one checks the
-# end-to-end gradient against the ForwardDiff reference, these pin the rules
-# themselves (registered as primitives, correct in both Mooncake modes, at the
-# `x == 0` point where Mooncake's derived rule returns the wrong zero).
+# Guard for the `Mooncake = "0.5.58"` compat floor. `xlogy` and `xlog1py` are
+# Mooncake's own primitives from 0.5.58 (chalk-lab/Mooncake.jl#1325). These
+# items fail on a resolve that slips below the floor, where Mooncake derives
+# the rule from the primal's `iszero(x)` branch and returns `∂/∂x = 0` at
+# `x == 0`.
 #
 # Each item is mode-agnostic (it exercises both modes of the rules), so it is
 # tagged for a single canonical backend and runs once across the per-backend CI
 # jobs; the untagged `task test-ad` run executes every item.
-#
-# Both items load `EpiAwareADTools` for effect. The rules live in a package
-# extension, so they only exist once the package is loaded alongside its
-# trigger packages, and TestItemRunner runs items in `Dict` order rather than
-# file order. An item that leaves the load to a neighbour asserts nothing on
-# the runs where it happens to go first (#88).
 
 @testitem "xlogy/xlog1py pass Mooncake.TestUtils.test_rule" tags = [
     :ad, :mooncake, :mooncake_reverse,
 ] begin
-    # `is_primitive = true` asserts the lifted rule is actually invoked, so
-    # this fails if the registration is absent or narrowed away from the
-    # `Base.IEEEFloat` argument types; the finite-difference comparison then
-    # fails if the derivative is wrong. `x == 0` is the case that matters.
-    using EpiAwareADTools: EpiAwareADTools
+    # `is_primitive = true` asserts a registered rule is actually invoked, so
+    # this fails if Mooncake's own registration is absent or narrower than
+    # `Base.IEEEFloat`; the finite-difference comparison then fails if the
+    # derivative is wrong. `x == 0` is the case that matters.
     using Random: MersenneTwister
     using Mooncake: Mooncake
     using LogExpFunctions: xlogy, xlog1py
@@ -46,11 +38,10 @@ end
 ] begin
     # The real-world trigger. `Distributions.gammalogpdf` computes
     # `xlogy(shape - 1, x / scale)`, so at `shape == 1` the first argument is
-    # exactly zero. Without the lifted rules Mooncake derives `∂/∂x = 0` from
+    # exactly zero. Below the compat floor Mooncake derives `∂/∂x = 0` from
     # the primal's `iszero(x)` branch and both modes return
     # `-digamma(1) = γ ≈ 0.5772` for the shape component instead of
     # `log(x / scale) - digamma(1)`.
-    using EpiAwareADTools: EpiAwareADTools
     using ADTypes: AutoMooncake, AutoMooncakeForward
     using DifferentiationInterface: gradient
     using Distributions: Gamma, logpdf
