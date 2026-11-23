@@ -57,6 +57,9 @@ using Distributions: Distributions, Gamma, Beta,
     LogNormal, Weibull, TDist, LocationScale, Continuous, Truncated, params,
     shape, scale, pdf, logpdf, cdf, logcdf, ccdf, logccdf, truncated, censored
 
+# Used by the scalar `primal` method (see src/primal.jl).
+using EnzymeCore: ignore_derivatives
+
 using SpecialFunctions: gamma_inc, loggamma, digamma, beta_inc, logbeta
 
 # DocStringExtensions symbols for the @template conventions registered by

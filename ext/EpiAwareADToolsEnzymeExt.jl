@@ -14,7 +14,8 @@ using SpecialFunctions: gamma, digamma
 # `inactive` covers every activity / batch-width / mode permutation uniformly.
 # Other backends get the same treatment via the ChainRules `@non_differentiable
 # primal` mark, the ForwardDiff/ReverseDiff primal-stripping methods, and the
-# Mooncake `@zero_derivative` rule.
+# Mooncake `@zero_derivative` rule. On Julia 1.10 and 1.11 the scalar method
+# also needs `ignore_derivatives`, explained in src/primal.jl.
 EnzymeRules.inactive(::typeof(primal), args...) = nothing
 
 # `NonDifferentiable` (EpiAwareADTools#37): the same `inactive` marking,

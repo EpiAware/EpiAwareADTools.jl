@@ -6,6 +6,7 @@ version = "0.2.4"
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
+EnzymeCore = "f151be2c-9106-41f4-ab19-57ee4f262869"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [weakdeps]
@@ -30,7 +31,12 @@ ChainRulesCore = "1"
 # for an absent bound, which `primal_distribution` round-trips through.
 Distributions = "0.25.92"
 DocStringExtensions = "0.9"
-Enzyme = "0.13"
+# Floored at 0.13.74: the first release that lowers `ignore_derivatives` from
+# EnzymeCore, used by `primal` (see src/primal.jl). An older Enzyme still
+# resolves with EnzymeCore 0.8.14 but cannot link the intrinsic.
+Enzyme = "0.13.74"
+# Floored at 0.8.14: the first release with `ignore_derivatives`.
+EnzymeCore = "0.8.14"
 ForwardDiff = "0.10, 1"
 # Floored at 0.5.58: the first release carrying Mooncake's own `xlogy` and
 # `xlog1py` primitives (chalk-lab/Mooncake.jl#1325). Below that floor Mooncake
