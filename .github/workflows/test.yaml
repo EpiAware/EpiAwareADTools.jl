@@ -15,13 +15,6 @@ concurrency:
 jobs:
   test:
     uses: EpiAware/.github/.github/workflows/tests.yml@2c7ce73459772f11dad46ac7f456e35f0d296faf
-    with:
-      # The managed standard needs Julia 1.11: `[sources]` (how test/Project.toml
-      # pins the kit to main) is a Pkg 1.11 feature, and on 1.10 it is silently
-      # ignored — the job then resolves the registered kit rather than the
-      # pinned rev and tests a stale kit while appearing to test this one
-      # (#246). The reusable defaults to ["1", "lts", "pre"]; drop the lts leg.
-      julia_versions: '["1", "pre"]'
     secrets: inherit  # pragma: allowlist secret
 
   downgrade-compat:
