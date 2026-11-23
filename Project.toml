@@ -31,10 +31,7 @@ ChainRulesCore = "1"
 # for an absent bound, which `primal_distribution` round-trips through.
 Distributions = "0.25.92"
 DocStringExtensions = "0.9"
-# Floored at 0.13.74: the first release that lowers `ignore_derivatives` from
-# EnzymeCore, used by `primal` (see src/primal.jl). An older Enzyme still
-# resolves with EnzymeCore 0.8.14 but cannot link the intrinsic.
-Enzyme = "0.13.74"
+Enzyme = "0.13"
 # Floored at 0.8.14: the first release with `ignore_derivatives`.
 EnzymeCore = "0.8.14"
 ForwardDiff = "0.10, 1"
