@@ -40,8 +40,8 @@ primal(3.0), primal(((1.0, 2.0), 3.0)), primal([1.0, 2.0])
 ```
 """
 function primal(x::Real)
-    # On Julia 1.10 and 1.11 Enzyme ignores the `EnzymeRules.inactive` mark on
-    # a function that only returns its argument (EnzymeAD/Enzyme.jl#714).
+    # On Julia 1.11 Enzyme ignores the `EnzymeRules.inactive` mark on a
+    # function that only returns its argument (EnzymeAD/Enzyme.jl#714).
     # `ignore_derivatives` is the identity outside Enzyme and cuts the shadow
     # inside it. Return `x` directly once the floor is 1.12 or #714 is fixed.
     return ignore_derivatives(x)
