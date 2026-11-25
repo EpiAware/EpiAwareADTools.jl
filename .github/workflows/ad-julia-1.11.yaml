@@ -1,0 +1,34 @@
+# PACKAGE-OWNED — not written by EpiAwarePackageTools.scaffold.
+name: AD (Julia 1.11)
+
+# Runs the AD gradient suite on Julia 1.11, the oldest supported version. The
+# managed AD workflow runs on Julia `1` only, but an Enzyme gradient can be
+# correct on 1.12 and wrong on 1.11 (EnzymeAD/Enzyme.jl#714). Coverage stays
+# with the managed workflow, so each per-backend flag gets one report.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - 'LICENSE'
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - 'LICENSE'
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ad:
+    uses: EpiAware/.github/.github/workflows/ad.yml@24fcf1ef918d135df4a0675f57db15f6d572fd66
+    with:
+      backends: '[{"name":"ForwardDiff","tag":"forwarddiff","flag":"ad-forwarddiff"},{"name":"ReverseDiff (tape)","tag":"reversediff","flag":"ad-reversediff"},{"name":"ReverseDiff (compiled)","tag":"reversediff_compiled","flag":"ad-reversediff-compiled"},{"name":"Enzyme forward","tag":"enzyme_forward","flag":"ad-enzyme-forward"},{"name":"Enzyme reverse","tag":"enzyme_reverse","flag":"ad-enzyme-reverse"},{"name":"Mooncake reverse","tag":"mooncake_reverse","flag":"ad-mooncake-reverse"},{"name":"Mooncake forward","tag":"mooncake_forward","flag":"ad-mooncake-forward"}]'
+      julia-version: '1.11'
+      coverage: false
+    secrets: inherit  # pragma: allowlist secret
